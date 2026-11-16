@@ -147,6 +147,7 @@ UI_SMALL static void draw_menu(void)
                 {"EDIT",     "HOLD: ERASE LIVE"},
                 {"ARP",      "HOLD: NOTE REPEAT"},
                 {"SAVE",     "HOLD: A-D SECTIONS"},
+                {"SEL+OCT",  "PATTERN +-1 OCTAVE"},
                 {"SEL",      "HOLD: KEY SCL CHORD"},
                 {"REC",      "HOLD: CLEAR TRACK"},
                 {"EDIT+OCT", "UNDO / REDO"},
@@ -154,7 +155,7 @@ UI_SMALL static void draw_menu(void)
             };
             uint32_t h;
             for (h = 0; h < sizeof HELP / sizeof HELP[0]; h++) {
-                int32_t y = 1 + (int32_t)h * 15;
+                int32_t y = 1 + (int32_t)h * 14;
                 cv_text(2, y, &FONT_S, HELP[h][0], C_HI);
                 cv_text(74, y, &FONT_S, HELP[h][1], C_AMB);
             }

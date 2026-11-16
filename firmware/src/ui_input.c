@@ -967,6 +967,25 @@ UI_SMALL static int layers_input(uint32_t note_edges, uint32_t *pressed, uint32_
                 ui_message(undo_swap(1) ? "REDO" : "NOTHING TO REDO");
         }
     }
+    if (held == LY_SCALE) {                               /* (MENTAL) SEL + OCT- / OCT+: the playing pattern an octave
+                                                           * down / up, live; both together: back to 0 */
+        uint32_t ob = 1u << panel.btn[B_OCTDN], pb = 1u << panel.btn[B_OCTUP];
+        static uint32_t prev;
+        uint32_t b = fm1_in.buttons & (ob | pb), press = b & ~prev, i = trk_index(TSEL) % NTRK;
+        prev = b;
+        if (press) {
+            char m[12];
+            int32_t v = b == (ob | pb) ? 0 : clamp(seq_trans[i] + ((press & pb) ? 12 : -12), -24, 24);
+            used[held] = 1;
+            seq_trans_set(i, v);
+            str_cpy(m, "SEQ OCT ", sizeof m);
+            if (v > 0)
+                str_cpy(m + str_len(m), "+", 2);
+            fmt_int(m + str_len(m), v / 12);
+            ui_message(m);
+            ui.force = 1;
+        }
+    }
     if (held == LY_STEP) {                                /* SEQ + OCT- / OCT+: the page; a step held: OCT- its nudge, locks and
                                                            * condition go, OCT+ its fill condition (normal, fill only, no fill) */
         uint32_t ob = 1u << panel.btn[B_OCTDN], pb = 1u << panel.btn[B_OCTUP];

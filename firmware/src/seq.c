@@ -2669,9 +2669,28 @@ static uint32_t step_vel(const step_t *s, uint32_t i)
 /* play one synth step: TIE extends, REST releases, NOTE (re)triggers; a SLIDE on the previous
  * step makes this one legato with a glide (acid style). skip: bit k = note k already sounds
  * from live recording (not triggered, not released here). len: the step's length (units). */
+/* (MENTAL) LIVE TRANSPOSE: the pattern a track is playing, moved in octaves while it plays. Not the
+ * keyboard's octave (song.octave) and not P_TRANS, which the steps never saw: this is a performance, so
+ * nothing is written to the pattern and nothing is saved with the project. SEL held + OCT- / OCT+. */
+static int8_t seq_trans[NTRK];
+static void seq_trans_set(uint32_t i, int32_t semis)
+{
+    if (i >= NTRK || seq_trans[i] == (int8_t)semis)
+        return;
+    seq_release(&trk[i]);                            /* what sounds was started at the old one: let it go, no hang */
+    seq_trans[i] = (int8_t)clamp(semis, -36, 36);
+}
 static void seq_step(track_t *t, const step_t *s, uint32_t slen, uint32_t skip)
 {
     uint32_t i, j, gate = slen * (uint32_t)t->p[P_SGATE] / 128u;
+    step_t moved;
+    if (seq_trans[trk_index(t) % NTRK] && s->time == ST_NOTE) {   /* the step as it sounds now */
+        int32_t d = seq_trans[trk_index(t) % NTRK];
+        moved = *s;
+        for (i = 0; i < moved.n && i < 4u; i++)
+            moved.note[i] = (uint8_t)clamp((int32_t)moved.note[i] + d, 0, 127);
+        s = &moved;
+    }
     uint32_t slide_in = t->seq_hold && t->seq_n;
     const step_t *nx = &t->step[(t->seq_idx + 1u) % trk_len(t)];
     uint32_t next_tie = nx->time == ST_TIE || (nx->time == ST_NOTE && (nx->flags & (SF_CONT_ALL | SF_LEG)));   /* (2.7: notes

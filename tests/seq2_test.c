@@ -2171,6 +2171,64 @@ static void t_jump(void)
     check(tot > 4u, "STEP JUMP: let go and the whole pattern is back");
 }
 
+/* (MENTAL) which notes a synth track's voices have started, for the live-transpose test */
+static uint8_t snote[128];
+static void snote_scan(const track_t *t)
+{
+    uint32_t v;
+    for (v = 0; v < NVOICE; v++)
+        if (t->v[v].active && t->v[v].gate && t->v[v].note < 128u)
+            snote[t->v[v].note] = 1;
+}
+static void snote_clear(void) { memset(snote, 0, sizeof snote); }
+static int voices_held(const track_t *t)
+{
+    uint32_t v;
+    for (v = 0; v < NVOICE; v++)
+        if (t->v[v].active && t->v[v].gate)
+            return 1;
+    return 0;
+}
+
+/* (MENTAL) LIVE TRANSPOSE: SEL held + OCT- / OCT+ moves the pattern a track plays, while it plays,
+ * without writing anything into the pattern and without leaving a note hanging. */
+static void t_strans(void)
+{
+    uint32_t i;
+    step_t saved[NSTEP];
+    reset(120);
+    for (i = 0; i < 4u; i++) {                       /* a four-note line on track 1 */
+        trk[0].step[i * 4u].time = ST_NOTE;
+        trk[0].step[i * 4u].n = 1;
+        trk[0].step[i * 4u].note[0] = (uint8_t)(48 + i * 2u);
+    }
+    trk[0].p[P_SLEN] = 16;
+    memcpy(saved, trk[0].step, sizeof saved);
+    transport_req = 1;
+    while (blk < 3000u)
+        run_block();
+    snote_clear();
+    while (blk < 14000u) { run_block(); snote_scan(&trk[0]); }
+    check(snote[48] && snote[54] && !snote[60], "LIVE TRANSPOSE: at 0, the notes as written");
+    seq_trans_set(0, 12);
+    snote_clear();
+    while (blk < 26000u) { run_block(); snote_scan(&trk[0]); }
+    check(snote[60] && snote[66] && !snote[48], "LIVE TRANSPOSE: +1 octave, the line an octave up");
+    check(!memcmp(saved, trk[0].step, sizeof saved), "LIVE TRANSPOSE: the pattern itself is untouched");
+    seq_trans_set(0, -12);
+    snote_clear();
+    while (blk < 38000u) { run_block(); snote_scan(&trk[0]); }
+    check(snote[36] && !snote[60], "LIVE TRANSPOSE: -1 octave");
+    seq_trans_set(0, 0);
+    snote_clear();
+    while (blk < 50000u) { run_block(); snote_scan(&trk[0]); }
+    check(snote[48] && !snote[36], "LIVE TRANSPOSE: back to 0, the line as written");
+    transport_req = 2;
+    while (blk < 52000u)
+        run_block();
+    check(!voices_held(&trk[0]), "LIVE TRANSPOSE: nothing left hanging after it moved");
+}
+
 int main(void)
 {
     t_midich();
@@ -2211,6 +2269,7 @@ int main(void)
     t_mute();
     t_chordplus();
     t_jump();
+    t_strans();
     printf("seq2: %s\n", fails ? "FAILED" : "all checks ok");
     return fails;
 }

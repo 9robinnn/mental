@@ -922,6 +922,12 @@ UI_SMALL static void layer_screen_draw(void)
         str_cpy(sub + 5, N_NOTE[root], 4);
         str_cpy(sub + str_len(sub), " ", 2);
         te_lower(sub + str_len(sub), N_SCALE[clamp(trk[0].p[P_SCALE], 0, NSCALES - 1)], 8);
+        {   /* (MENTAL) and what OCT- / OCT+ have done to the playing pattern */
+            int32_t v = seq_trans[trk_index(t) % NTRK] / 12;
+            str_cpy(sub + str_len(sub), v ? (v > 0 ? "  oct +" : "  oct ") : "  oct +-", 10);
+            if (v)
+                fmt_int(sub + str_len(sub), v);
+        }
         for (i = 0; i < 16u; i++) {
             uint32_t k = key_of_white(i), pc = (53u + k) % 12u, in = (mask >> ((pc + 12u - root) % 12u)) & 1u;
             if (!is_drum(t) && t->p[P_CHORD]) {       /* chord mode: the chord this key plays (the i chord lit) */
