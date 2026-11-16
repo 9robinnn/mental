@@ -583,7 +583,9 @@ UI_SMALL static void go_home(void)
 /* MENTAL powers on ready to play: the sub under the kick, a drone, the acid; track 4 is the MENTAL kit.
  * For the kicks on their own track (their own level, filter, sends and mute), PRESETS reaches MNT KICKS,
  * which plays the user slot USR2 on the SAMPLE engine. */
-static const uint8_t TRK_DEF[NPART][2] = {{0, 24}, {8, 9}, {0, 22}};   /* ANALOG MNT SUB, GRAIN MNT RITUAL, ANALOG MNT ACID */
+/* (MENTAL) the live layout: a track for the kick, one for the nappe, one for the acid, and the drums
+ * on 4 - so the kick has its own level, its own mute and its own steps, as on a real teuf machine */
+static const uint8_t TRK_DEF[NPART][2] = {{0, 22}, {8, 9}, {4, 12}};   /* ANALOG MNT ACID, GRAIN MNT RITUAL, SAMPLE MNT KICKS */
 UI_SMALL static uint32_t trk_def_engine(uint32_t i) { return i < NPART ? TRK_DEF[i][0] : 0u; }
 
 UI_SMALL static int seq_is_empty(const track_t *t) { return track_empty(t); }

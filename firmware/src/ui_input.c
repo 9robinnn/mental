@@ -306,14 +306,19 @@ UI_SMALL static void tracks_edit(uint32_t slot, int32_t steps)
         vp = is_drum(t) ? &song.g[G_DRLVL] : &t->p[P_LEVEL];
         d = is_drum(t) ? &GP[G_DRLVL] : &TP[P_LEVEL];
         break;
-    case 2:
-        vp = &t->p[P_SLEN];
-        d = &TP[P_SLEN];
+    case 2:                                          /* (MENTAL) the track's own cutoff, from the home screen: no menu */
+        vp = &t->p[P_TFLT];
+        d = &TP[P_TFLT];
         break;
-    default:
-        vp = &t->p[P_PAN];
-        d = &TP[P_PAN];
-        break;
+    default:                                         /* (MENTAL) KNOB 4: cut the track and bring it back, one flick */
+        {
+            char n[4];
+            fmt_int(n, (int32_t)song.sel + 1);
+            t->p[P_MUTE] = (int16_t)(steps > 0);
+            ui_say(t->p[P_MUTE] ? "CUT TRACK " : "ON: TRACK ", n);
+        }
+        ml_knob(t, P_MUTE);
+        return;
     }
     *vp = (int16_t)clamp(*vp + accel(EN_K1 + slot, steps, d->names ? 0 : d->max - d->min), d->min, d->max);
     if (!is_drum(t) && (vp == &t->p[P_LEVEL] || vp == &t->p[P_PAN]))
@@ -780,6 +785,9 @@ UI_SMALL static void layer_tap(uint32_t layer)
     case LY_FX:
         open_family(FAM_FX);
         break;
+    case LY_JUMP:                                         /* (MENTAL) ENV is the STEP JUMP layer held; tapped it is still ENV */
+        open_family(FAM_ENV);
+        break;
     case LY_ERASE:
     case LY_STEP:
         if (on_drum_page()) {                             /* DRUMS: GRID -> KIT -> SOUND (2.7) */
@@ -1146,7 +1154,7 @@ UI_SMALL static void ui_input(void)
         home_eat = 0;
     }
     pressed &= ~(ly_bit[LY_FX] | ly_bit[LY_ERASE] | ly_bit[LY_ROLL] | ly_bit[LY_STEP] | ly_bit[LY_SCALE] | ly_bit[LY_MIX] |
-                 ly_bit[LY_SONG]);
+                 ly_bit[LY_SONG] | ly_bit[LY_JUMP]);
     holds_input(pressed, fm1_ms);
     pressed &= ~((on_song_page() ? 0u : 1u << panel.btn[B_REC]) | (1u << panel.btn[B_SAVE]));
     if (layered || ui.hold_kind) {                      /* a layer / a hold: the rest waits */

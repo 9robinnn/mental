@@ -946,10 +946,11 @@ UI_SMALL static void draw_columns(void)
             param_format(&TP[P_LEVEL], (int32_t)lvl, val, &unit);
         }
         draw_column(1, "LEVEL", val, unit, lvl && !t->p[P_MUTE] ? VAL(1u) : C_DIM, (int32_t)lvl * 1000 / 127, ICON_AUTO);
-        param_format(&TP[P_SLEN], t->p[P_SLEN], val, &unit);
-        draw_column(2, "LEN", val, unit, VAL(2u), RATIO(&TP[P_SLEN], t->p[P_SLEN]), ICON_AUTO);
-        param_format(&TP[P_PAN], t->p[P_PAN], val, &unit);
-        draw_column(3, "PAN", val, unit, VAL(3u), RATIO(&TP[P_PAN], t->p[P_PAN]), param_icon(&TP[P_PAN], t->p[P_PAN]));
+        param_format(&TP[P_TFLT], t->p[P_TFLT], val, &unit);   /* (MENTAL) cutoff and cut, on the home screen */
+        draw_column(2, "CUTOFF", val, unit, VAL(2u), RATIO(&TP[P_TFLT], t->p[P_TFLT]),
+                    param_icon(&TP[P_TFLT], t->p[P_TFLT]));
+        str_cpy(val, t->p[P_MUTE] ? "CUT" : "ON", 12);
+        draw_column(3, "TRACK", val, "", t->p[P_MUTE] ? C_DIM : VAL(3u), t->p[P_MUTE] ? 0 : 1000, ICON_AUTO);
         return;
     }
     if (cur_page()->graph == GR_BROWSE) {

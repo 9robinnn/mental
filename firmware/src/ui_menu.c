@@ -11,12 +11,12 @@ enum { MI_COLOR, MI_ZOOM, MI_ACCEL, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_
 #if FELUCCA_CDC
        MI_SERIAL,
 #endif
-       MI_RATE, MI_FRESO, MI_ADV, MI_DPREV, MI_CPU1, MI_PANEL, MI_LCLEAR, MI_ABOUT, MI_COUNT };
+       MI_RATE, MI_FRESO, MI_ADV, MI_DPREV, MI_CPU1, MI_PANEL, MI_LCLEAR, MI_ABOUT, MI_HELP, MI_COUNT };
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "KNOB ACCEL", "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
 #if FELUCCA_CDC
                                               "USB SERIAL",
 #endif
-                                              "USB RATE", "FILTER RESO", "STEP ADVANCE", "DRUM PREVIEW", "2ND CORE", "HARDWARE CALIBRATION", "MIDI LEARN CLEAR", "ABOUT"};
+                                              "USB RATE", "FILTER RESO", "STEP ADVANCE", "DRUM PREVIEW", "2ND CORE", "HARDWARE CALIBRATION", "MIDI LEARN CLEAR", "ABOUT", "LIVE HELP"};
 enum { MS_SCREEN, MS_LIGHTS, MS_AUDIO, MS_SEQ, MS_SYSTEM, MS_COUNT };   /* (2.7.1: SEQ) */
 static const char *const MS_NAME[MS_COUNT] = {"SCREEN", "LIGHTS", "AUDIO", "SEQ", "SYSTEM"};   /* (AUDIO: and USB) */
 static const uint8_t MS_FIRST[MS_COUNT + 1] = {MI_COLOR, MI_LIGHTS, MI_LOWCUT, MI_ADV, MI_CPU1, MI_COUNT};   /* rows of each */
@@ -118,8 +118,10 @@ UI_SMALL static void draw_menu(void)
     if (ui.force)                                   /* head + rule + two bands cover rows 0..229 */
         lcd_fill(0, H_HEAD + 1 + 124 + 95, 240, 240 - (H_HEAD + 1 + 124 + 95), C_BLACK);
     cv_begin(240, H_HEAD, C_BLACK);
-    cv_text(4, 1, &FONT_S, ui.menu == 2 ? "ABOUT" : "MENU", C_HI);
-    if (ui.menu != 2) {                             /* the section and its number, as a page's "ENV DEST 2/2" */
+    cv_text(4, 1, &FONT_S, ui.menu == 3 ? "LIVE" : ui.menu == 2 ? "ABOUT" : "MENU", C_HI);
+    if (ui.menu == 3)                               /* (MENTAL) the live sheet: what gets you out of it */
+        cv_text(236 - text_w(&FONT_S, "OCT- BACK"), 1, &FONT_S, "OCT- BACK", C_GRAY);
+    else if (ui.menu != 2) {                        /* the section and its number, as a page's "ENV DEST 2/2" */
         char t[16];
         str_cpy(t, MS_NAME[sec], sizeof t);
         str_cpy(t + str_len(t), " ", 2);
@@ -133,11 +135,33 @@ UI_SMALL static void draw_menu(void)
     for (pass = 0; pass < 2u; pass++) {             /* the canvas holds 124 rows: draw in two bands */
         cv_begin(240, pass ? 95u : 124u, C_BLACK);
         cv_oy = pass ? -124 : 0;
-        if (ui.menu == 2) {
-            cv_text(4, 4, &FONT_L, "SLOOP", C_WHITE);
+        if (ui.menu == 3) {                         /* (MENTAL) the live cheat sheet: 8 px a character, 30 to a line */
+            static const char *const HELP[][2] = {
+                {"HOME",     "K2 LVL K3 CUT K4 MUT"},
+                {"GLO+HOME", "LOCK: 1 PRESS = MUTE"},
+                {"ALGO",     "TRACK, PRESETS SOUND"},
+                {"FX",       "HOLD: 27 PUNCH FX"},
+                {"ENV",      "HOLD: STEP JUMP"},
+                {"GLO",      "HOLD: MUTE SOLO LVL"},
+                {"SEQ",      "HOLD: THE 16 STEPS"},
+                {"EDIT",     "HOLD: ERASE LIVE"},
+                {"ARP",      "HOLD: NOTE REPEAT"},
+                {"SAVE",     "HOLD: A-D SECTIONS"},
+                {"SEL",      "HOLD: KEY SCL CHORD"},
+                {"REC",      "HOLD: CLEAR TRACK"},
+                {"EDIT+OCT", "UNDO / REDO"},
+            };
+            uint32_t h;
+            for (h = 0; h < sizeof HELP / sizeof HELP[0]; h++) {
+                int32_t y = 2 + (int32_t)h * 16;
+                cv_text(2, y, &FONT_S, HELP[h][0], C_HI);
+                cv_text(74, y, &FONT_S, HELP[h][1], C_AMB);
+            }
+        } else if (ui.menu == 2) {
+            cv_text(4, 4, &FONT_L, "MENTAL", C_WHITE);
             cv_rect(96, 10, 8, 4, TE_COL[0]), cv_rect(96, 16, 12, 4, TE_COL[1]);   /* the sail */
             cv_rect(96, 22, 16, 4, TE_COL[2]), cv_rect(96, 28, 20, 4, TE_COL[3]);
-            cv_text(4, 36, &FONT_S, "BASED ON FELUCCA", C_AMB);
+            cv_text(4, 36, &FONT_S, "MENTAL TEKNO: BASED ON SLOOP", C_AMB);
             cv_text(4, 54, &FONT_S, FELUCCA_VERSION, C_HI);
             cv_text(236 - text_w(&FONT_S, __DATE__), 54, &FONT_S, __DATE__, C_GRAY);   /* build date */
             cv_text(cv_text(4, 72, &FONT_S, "LEO KUROSHITA", C_HI) + 8, 72, &FONT_S, "@KUROGEDELIC", C_AMB);
@@ -154,7 +178,7 @@ UI_SMALL static void draw_menu(void)
 #if FELUCCA_CPU1                                    /* (the host tests include this file without cpu1.c) */
             cv_text(236 - text_w(&FONT_S, cpu1_label()), 119, &FONT_S, cpu1_label(), C_AMB);   /* 2 CORES / 1 CORE (cpu1.c) */
 #endif
-            cv_text(4, 132, &FONT_S, "GITHUB.COM/ISOD89/SLOOP-FM1", C_AMB);   /* (the source of this firmware) */
+            cv_text(4, 132, &FONT_S, "GITHUB.COM/ISOD89/SLOOP-FM1", C_AMB);   /* (what this firmware is based on) */
             cv_text(4, 146, &FONT_S, "FONT: TERMINUS (OFL)", C_DIM);
             cv_text(4, 159, &FONT_S, "SAMPLES: VERSILIAN (CC0)", C_DIM);
             cv_text(4, 172, &FONT_S, "+ SONIC PI (CC0)", C_DIM);
@@ -319,6 +343,12 @@ UI_SMALL static void mi_set(uint32_t i, int32_t s)
             ui.force = 1;
         }
         break;
+    case MI_HELP:                                      /* (MENTAL) the live cheat sheet */
+        if (!s) {
+            ui.menu = 3;
+            ui.force = 1;
+        }
+        break;
     case MI_ABOUT:
         if (!s) {
             ui.menu = 2;
@@ -337,7 +367,7 @@ UI_SMALL static void menu_input(uint32_t pressed)
     uint32_t k, ok = (pressed >> panel.btn[B_OCTUP]) & 1u, back = (pressed >> panel.btn[B_OCTDN]) & 1u;
     uint32_t sel = ui.menu_sel % MI_COUNT, sec = mi_sec(sel), n = MS_FIRST[sec + 1u] - MS_FIRST[sec];
     if (back) {
-        if (ui.menu == 2)
+        if (ui.menu == 2 || ui.menu == 3)
             ui.menu = 1, ui.force = 1;
         else
             menu_close();

@@ -2126,6 +2126,51 @@ static void t_drdly(void)
           "2.5: GLO > DRUMS > DLY: the drums echo in the tempo delay (more with more DLY, through the FILTER too); 0: none");
 }
 
+/* (MENTAL) STEP JUMP: hold ENV and press steps and the tracks play only those, cycling through them one a
+ * grid tick, while the patterns stay exactly as written (it is a performance, not an edit). */
+static void t_jump(void)
+{
+    uint32_t i, n0, n1, seen[16], tot = 0;
+    step_t saved[NSTEP];
+    reset(120);
+    for (i = 0; i < 16u; i++)                        /* every step a different drum sound: which one tells us where */
+        dstep_set(&TDRUM->dstep[i], i % DRUM_LANES, LV_NORM, 0);
+    memcpy(saved, TDRUM->step, sizeof saved);
+    transport_req = 1;
+    while (blk < 2000u)
+        run_block();
+    n0 = nhits;
+    check(jump_mask == 0, "STEP JUMP: nothing held, nothing jumping");
+    jump_mask = (uint16_t)(1u << 3 | 1u << 11);      /* hold steps 4 and 12 */
+    while (blk < 14000u)
+        run_block();
+    n1 = nhits;
+    for (i = 0; i < 16u; i++)
+        seen[i] = 0;
+    for (i = n0 + 2u; i < n1; i++)                   /* (+2: the step already firing when the keys went down) */
+        for (uint32_t k = 0; k < 16u; k++)
+            if (hits[i].note == LANE_NOTE[k % DRUM_LANES]) {
+                seen[k]++;
+                tot++;
+                break;
+            }
+    check(seen[3] > 4u && seen[11] > 4u, "STEP JUMP: the held steps keep playing");
+    check(tot > 10u && seen[3] + seen[11] == tot, "STEP JUMP: and nothing else does");
+    check(!memcmp(saved, TDRUM->step, sizeof saved), "STEP JUMP: the pattern itself is untouched");
+    jump_mask = 0;                                   /* let the keys go */
+    n0 = nhits;
+    while (blk < 26000u)
+        run_block();
+    tot = 0;
+    for (i = n0 + 2u; i < nhits; i++)
+        for (uint32_t k = 0; k < 16u; k++)
+            if (hits[i].note == LANE_NOTE[k % DRUM_LANES] && k != 3u && k != 11u) {
+                tot++;
+                break;
+            }
+    check(tot > 4u, "STEP JUMP: let go and the whole pattern is back");
+}
+
 int main(void)
 {
     t_midich();
@@ -2165,6 +2210,7 @@ int main(void)
     t_chords();
     t_mute();
     t_chordplus();
+    t_jump();
     printf("seq2: %s\n", fails ? "FAILED" : "all checks ok");
     return fails;
 }

@@ -21,8 +21,8 @@
  * The keys' part runs in the audio ISR (seq.c layer_now: no lag, no lost press); the SEQ, SEL and
  * GLO keys come to the UI through seq.c lk_q. HOLD: REC held clears the track, SAVE held saves the
  * project (a ring fills; let go before and nothing happens). */
-static const uint8_t LAYER_BTN[LY_COUNT] = {NB, B_FX, B_EDIT, B_ARP, B_SEQ, B_SCL, B_GLO, B_SAVE};
-static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song"};
+static const uint8_t LAYER_BTN[LY_COUNT] = {NB, B_FX, B_EDIT, B_ARP, B_SEQ, B_SCL, B_GLO, B_SAVE, B_ENV};
+static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song", "jump"};
 static void section_store(uint32_t s);                  /* project.c */
 static void section_load(uint32_t s);
 static uint8_t sec_armed;                               /* store over a used section: the key again within 3 s */
@@ -954,6 +954,19 @@ UI_SMALL static void layer_screen_draw(void)
         ratio[1] = trk[0].p[P_SCALE] * 1000 / (NSCALES - 1);
         ratio[2] = t->p[P_QUANT] * 500;
         ratio[3] = (t->p[P_TRANS] + 24) * 1000 / 48;
+        break;
+    }
+    case LY_JUMP: {                                     /* (MENTAL) STEP JUMP: hold the steps that play */
+        uint32_t jm = jump_mask;
+        col = TE_DRUM;
+        str_cpy(sub, jm ? "only these steps play" : "hold steps: only those play", sizeof sub);
+        for (i = 0; i < 16u; i++) {
+            int on = (jm >> i) & 1u;
+            fmt_int(tl[i].lab, (int32_t)i + 1);
+            tl[i].bg = on ? C_WHITE : (i & 3u) == 0u ? TE_G2 : TE_G1;
+            tl[i].fg = on ? C_BLACK : TE_G4;
+            tl[i].top = (uint16_t)(song.playing && TSEL->seq_idx == i ? C_WHITE : 0);
+        }
         break;
     }
     case LY_MIX: {                                      /* mute 1..4, solo 1..4, fill / fill bar, tap */

@@ -144,9 +144,14 @@ static uint32_t scale_mask(const track_t *t)
 }
 
 /* ---------------------------------------------------------- layers --- */
-enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_COUNT };
+enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_JUMP, LY_COUNT };
 static uint32_t ly_bit[LY_COUNT];        /* the button (fm1_in.buttons bit) of each layer: the UI sets them */
 static uint32_t dyn_bit[2];              /* OCT- / OCT+: ghost / hard on the drum track */
+/* (MENTAL) STEP JUMP, as the Electribe and the volcas have it: hold ENV and press steps, and every track
+ * plays only those, in order, one a grid tick. Let go and the patterns are back, untouched: it changes
+ * what plays, never what is written. */
+static volatile uint16_t jump_mask;
+static volatile uint32_t jump_n;         /* ticks played since the mask was set (which held step is next) */
 /* a layer locked open (its button held + HOME tapped: ui_input.c), LY_PLAY = none: the keys and knobs
  * stay in it with the button let go, as if it were held */
 static volatile uint8_t ly_lock = LY_PLAY;
@@ -2210,6 +2215,17 @@ static void key_down(uint32_t k)
         }
         return;
     }
+    case LY_JUMP:                                     /* (MENTAL) STEP JUMP: the held steps are what plays */
+        if (k < 16u) {
+            if (!jump_mask)
+                jump_n = 0;
+            jump_mask |= (uint16_t)(1u << k);
+            RING_PUBLISH();
+        }
+        kb_kind[k] = KS_UI;
+        kb_nt[k][0] = (uint8_t)layer;
+        lk_push(layer, k, 1);
+        return;
     case LY_STEP:
     case LY_SCALE:
     case LY_MIX:
@@ -2332,6 +2348,10 @@ static void key_up(uint32_t k)
         }
         return;
     case KS_UI:
+        if (kb_nt[k][0] == LY_JUMP && k < 16u) {    /* (MENTAL) a jump step let go */
+            jump_mask &= (uint16_t)~(1u << k);
+            RING_PUBLISH();
+        }
         lk_push(kb_nt[k][0], k, 0);
         return;
     case KS_MOD:                                    /* a CHORD+ modifier let go: the chords held change back */
@@ -2850,8 +2870,24 @@ static void seq_tick(track_t *t, uint32_t adv)
         /* (abs + 1 == seq_abs: SWING turned up inside a played odd step: nothing until the grid is back) */
     }
     if (fire) {                                      /* a new step: one a block at most */
+        uint32_t jm = jump_mask;
         t->seq_abs = nabs;
         idx = nabs % len;
+        if (jm) {                                    /* (MENTAL) STEP JUMP: only the held steps, in order */
+            uint32_t cnt = 0, b, want, seen = 0;
+            for (b = 0; b < 16u; b++)
+                cnt += (jm >> b) & 1u;
+            want = (nabs % cnt);                     /* (cnt >= 1: jm is not 0) */
+            for (b = 0; b < 16u; b++)
+                if ((jm >> b) & 1u) {
+                    if (seen == want) {
+                        if (b < len)
+                            idx = b;
+                        break;
+                    }
+                    seen++;
+                }
+        }
         t->seq_idx = (uint16_t)idx;
         t->rat_done[0] = t->rat_done[1] = t->rat_done[2] = t->rat_done[3] = 0;
         t->rat_lanes = 0;
