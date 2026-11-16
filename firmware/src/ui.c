@@ -580,6 +580,9 @@ UI_SMALL static void go_home(void)
 /* the parts' sounds at power-on (engine, preset): bass, pad, lead */
 /* MENTAL powers on ready to play mental tekno: the sub bass under the kick, the acid over it, and a
  * drone behind. Track 4 is the drums, on the MENTAL kit (drums.c DRUM_DEFAULT_KIT). */
+/* MENTAL powers on ready to play: the sub under the kick, a drone, the acid; track 4 is the MENTAL kit.
+ * For the kicks on their own track (their own level, filter, sends and mute), PRESETS reaches MNT KICKS,
+ * which plays the user slot USR2 on the SAMPLE engine. */
 static const uint8_t TRK_DEF[NPART][2] = {{0, 24}, {8, 9}, {0, 22}};   /* ANALOG MNT SUB, GRAIN MNT RITUAL, ANALOG MNT ACID */
 UI_SMALL static uint32_t trk_def_engine(uint32_t i) { return i < NPART ? TRK_DEF[i][0] : 0u; }
 
@@ -716,7 +719,7 @@ enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_STAB, BK_FX };
 static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "STAB", "FX"};
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     /* MENTAL: the mentale sounds first in their kinds, so the PRESETS knob reaches them at once */
-    {BK_BASS, 0, "MNT SUB"}, {BK_BASS, 0, "MNT ACID"},
+    {BK_BASS, 0, "MNT SUB"}, {BK_BASS, 0, "MNT ACID"}, {BK_BASS, 4, "MNT KICKS"}, {BK_BASS, 4, "MNT KIT"},
     {BK_BASS, 0, "808 BOOM"}, {BK_BASS, 0, "808 DIRTY"}, {BK_BASS, 0, "808 SLIDE"}, {BK_BASS, 0, "SUB BASS"},
     {BK_BASS, 0, "PLUGG BASS"}, {BK_BASS, 0, "REESE"}, {BK_BASS, 0, "WOBBLE"}, {BK_BASS, 0, "ACID 303"},
     {BK_BASS, 1, "FM BASS"}, {BK_BASS, 2, "CZ BASS"}, {BK_BASS, 6, "FAT BASS"}, {BK_BASS, 0, "FUNK BASS"},

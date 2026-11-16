@@ -405,6 +405,11 @@ class Builder:
             i = next((j for j, (n, _, _) in enumerate(named) if n == setname), None)
             if i is not None:
                 L.append(preset(i, self.kinds.get(setname, "wave"), *rest))
+        # MENTAL: two sounds that reach the user slots, so a track can be the kicks alone (SET: USR1, USR2),
+        # without walking the SET list by hand. Empty slots are silent until the editor fills them.
+        ns = max(1, len(sets))
+        L.append(f'    {{"MNT KIT", {{{ns}, 0, 0, 0, 127, 0, 0, 0}}, {{0, 127, 127, 40}}, 0, 0, FX(0, 0, 0, 0)}},')
+        L.append(f'    {{"MNT KICKS", {{{ns + 1}, 0, 0, 0, 127, 0, 8, 0}}, {{0, 127, 127, 40}}, 0, 0, FX(0, 0, 0, 0)}},')
         L.append("};")
         names = ", ".join(f'"{n}"' for n, _, _ in named)
         L.append("#define SMP_SET_NAMES_INIT " + names)

@@ -985,7 +985,10 @@ int main(int argc, char **argv)
             snprintf(why + strlen(why), sizeof why - strlen(why), " %u samples >= %d;", r->near, LIM_NEAR);
         if (fabs(r->dc) > LIM_DC)
             snprintf(why + strlen(why), sizeof why - strlen(why), " DC %.1f (limit %d);", r->dc, LIM_DC);
-        if (r->peak < LIM_PEAK_MIN)
+        /* (MENTAL) a sound that reads a user sample slot is silent until the editor fills it: MNT KIT and
+         * MNT KICKS point at USR1 and USR2 on purpose, so the kicks can have a track of their own. */
+        if (r->peak < LIM_PEAK_MIN && !(j->kind == J_PRESET && ENGINES[j->e] == &ENG_SAMPLE &&
+                                        ENGINES[j->e]->presets[j->pi].e[0] >= (int16_t)SMP_NSETS))
             snprintf(why + strlen(why), sizeof why - strlen(why), " peak %d (min %d);", r->peak, LIM_PEAK_MIN);
         if (r->free_s < 0)
             snprintf(why + strlen(why), sizeof why - strlen(why), " voices not free %d s after the note-offs;", FREE_CAP_S);
