@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # MENTAL: builds the firmware with JieLi's toolchain on GitHub's Linux runner, runs the host tests,
 # and keeps the installable package (.fwsc) as a downloadable artifact of the run.
-# Adapted from HYP-1's workflow (RustyPawz/fm1-HYP1), without the public site: this repository is private.
+# Then it publishes the site to GitHub Pages: the web installer with this build in it, the browser emulator
+# and the .fwsc. Adapted from HYP-1's workflow (RustyPawz/fm1-HYP1). Settings > Pages: Source = GitHub Actions.
 name: firmware
 on:
   push:
@@ -9,8 +10,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  pages: write
+  id-token: write
 concurrency:
-  group: firmware-${{ github.ref }}
+  group: pages
   cancel-in-progress: true
 jobs:
   build:
@@ -21,7 +24,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Tools
-        run: pip install Pillow
+        run: |
+          pip install Pillow cairosvg markdown
+          sudo apt-get update -qq && sudo apt-get install -y -qq clang lld >/dev/null
+          command -v wasm-ld >/dev/null || sudo ln -sf "$(ls /usr/bin/wasm-ld* | head -1)" /usr/local/bin/wasm-ld
       - name: JieLi toolchain and SDK (cached)
         id: jl
         uses: actions/cache/restore@v4
@@ -72,3 +78,19 @@ jobs:
         with:
           name: mental-firmware-${{ env.V }}
           path: build/amb-${{ env.V }}.fwsc
+      - name: Site (installer, emulator, download)
+        run: |
+          EN_VERSION="$V" sh web/emu/build_clang.sh
+          REPO_URL="https://github.com/$GITHUB_REPOSITORY" python3 tools/make_pages.py "build/amb-$V.fwsc" "$V" build/pages
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/pages
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}install/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
