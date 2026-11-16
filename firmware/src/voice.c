@@ -404,10 +404,13 @@ static void mono_play(track_t *t, uint32_t note, uint32_t vel, int retrig, int g
                 continue;                                   /* no room for this extra UNISON voice */
             /* level: about the same sum for 8 or 4 voices at random phases */
             voice_start(t, v, note, nv >= NVOICE ? vel * 36u / 100u : nv > 1u ? vel / 2u : vel, glide);
-            if (nv > 1u && i && !was_sounding) {   /* random start phases (SAMPLE: its start; not SLICE): */
-                static uint32_t seed = 0x1234567u;          /* in phase they stack, evenly spread they cancel */
+            if (nv > 1u && i && !was_sounding) {   /* start phases (SAMPLE: its start; not SLICE): */
+                /* (MENTAL) voice i takes its own i/nv of a turn, and a random offset on top. Random alone
+                 * could land two voices in phase, where they stack instead of summing as noise: on an
+                 * unlucky seed UNISON came out up to +8.7 dB over POLY (tests/unison_level_test.c). */
+                static uint32_t seed = 0x1234567u;
                 seed = seed * 1664525u + 1013904223u;
-                unison_spread(t, v, seed);
+                unison_spread(t, v, (uint32_t)((uint64_t)i * 4294967296u / nv) + (seed >> 4));
             } else if (nv > 1u && i && (v->pend & VP_ON))
                 v->pend |= VP_UNI;                          /* (a sample's, after its fade: spread as it starts) */
         } else {                                            /* legato: new pitch, same envelope */
@@ -808,9 +811,10 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
             if (voice_room(t, 0)) {                     /* (it was not counted while fading: within the budget) */
                 voice_start(t, v, v->pend_note, v->pend_vel, (pf & VP_GLIDE) != 0);
                 if (pf & VP_UNI) {                      /* (after Clipper 1.2) UNISON: not in phase with the others */
-                    static uint32_t seed = 0x13579BDu;
+                    static uint32_t seed = 0x13579BDu;      /* (MENTAL) its own share of a turn, as above */
+                    uint32_t nu = trk_nvoice(t);
                     seed = seed * 1664525u + 1013904223u;
-                    unison_spread(t, v, seed);
+                    unison_spread(t, v, (uint32_t)((uint64_t)(v - t->v) * 4294967296u / (nu > 1u ? nu : 1u)) + (seed >> 4));
                 }
                 if (pf & VP_OFF) {                      /* let go within the fade (~1.5 ms): released as it starts */
                     v->gate = 0;
