@@ -5,7 +5,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SLOOP installer</title>
+<title>MENTAL installer</title>
 <!--PWA--><link rel="manifest" href="../sloop.webmanifest"><meta name="theme-color" content="#000000"><link rel="icon" href="../icon-192.png"><!--/PWA-->
 <style>
   :root { --bg: #000; --fg: #f2f2f2; --dim: #8a8a92; --tile: #16161a; --line: #2a2a30;
@@ -59,10 +59,11 @@
   <!--STUDIO_GUIDE-->
   <!--BANNER-->
   <h1>Firmware for the M-VAVE FM-1</h1>
-  <p class="lead">A groovebox you play live: four tracks — three synths and a drum machine — 12 synth engines (with six-operator FM and DX7 patches), 153 sounds, 37 drum kits from 808 to techno, amapiano and ambient, your own samples and drum kits, 27 punch-in effects. House, techno, hip-hop, drum &amp; bass, synthwave, lo-fi, ambient: make what you want. No factory patterns, nothing to load: everything you hear, you play.</p>
+  <p class="lead" style="color:var(--orange);font-weight:600">MENTAL: a groovebox for mental tekno. Sub kicks on the root (41 to 48 Hz, a tail that reaches the next beat at 170 BPM), acid, dark drones and the resonant screams of the style. It powers on at 170 BPM in phrygian with its sounds loaded, ready to play.</p>
+  <p class="lead">Under it, SLOOP: a groovebox you play live: four tracks — three synths and a drum machine — 12 synth engines (with six-operator FM and DX7 patches), 153 sounds, 37 drum kits from 808 to techno, amapiano and ambient, your own samples and drum kits, 27 punch-in effects. House, techno, hip-hop, drum &amp; bass, synthwave, lo-fi, ambient: make what you want. No factory patterns, nothing to load: everything you hear, you play.</p>
   <div class="tiles">
-    <div class="tile" style="--c: var(--blue)"><b>153</b><span>sounds, 12 engines, your samples</span></div>
-    <div class="tile" style="--c: var(--green)"><b>37</b><span>drum kits, 909 to afro, + your own</span></div>
+    <div class="tile" style="--c: var(--blue)"><b>162</b><span>sounds, 12 engines, your samples</span></div>
+    <div class="tile" style="--c: var(--green)"><b>39</b><span>drum kits, incl. MENTAL and MENTAL H</span></div>
     <div class="tile" style="--c: var(--yellow)"><b>27</b><span>punch-in fx: hold fx + key</span></div>
     <div class="tile" style="--c: var(--orange)"><b>rec</b><span>no click: the loop follows you</span></div>
   </div>
@@ -82,10 +83,10 @@
     <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener">FM-1-transporter</a></p>
   <p class="small" data-t="back"></p>
   <p class="small"><a href="https://www.m-vave.com/download" target="_blank" rel="noopener">www.m-vave.com/download</a></p>
-  <p class="small">SLOOP is based on Felucca by Leo Kuroshita (@kurogedelic), <a href="https://hugelton.com" target="_blank" rel="noopener">Hügelton Instruments</a>.
+  <p class="small">MENTAL is based on <a href="https://github.com/isod89/sloop-fm1" target="_blank" rel="noopener">SLOOP</a> by isod89 (GPL-3.0), itself based on Felucca by Leo Kuroshita (@kurogedelic), <a href="https://hugelton.com" target="_blank" rel="noopener">Hügelton Instruments</a>.
     Hold OCT− alone while switching on for USB rescue.<br>
     Font: Terminus (Dimitar Toshkov Zhekov, SIL OFL 1.1). Samples: Versilian Studios VSCO-2 Community Edition and VCSL (CC0 1.0), and the Hügelton Sample Pack (© Hügelton Instruments, not CC0).<br>
-    M-VAVE and FM-1 are trademarks of their respective owners; SLOOP is not affiliated with them.<br>
+    M-VAVE and FM-1 are trademarks of their respective owners; MENTAL is not affiliated with them, nor with SLOOP.<br>
     <span data-t="license"></span> <a href="https://github.com/hugelton/Felucca" target="_blank" rel="noopener">github.com/hugelton/Felucca</a></p>
 </main>
 <script type="module">
@@ -225,7 +226,7 @@ window.addEventListener("beforeunload", (e) => { if (writing) { e.preventDefault
       if (h !== meta.sha256) { sayK("badpkg"); log(`sha256 ${h}, expected ${meta.sha256}`); return; }
     }
     image = logicalImage(pkg);
-    say(`SLOOP ${meta.version}`);
+    say(`MENTAL ${meta.version}`);
     lockAll(writing);
   } catch (e) { sayK("loadfail", e.message); }
 })();

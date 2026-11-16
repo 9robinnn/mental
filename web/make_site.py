@@ -63,9 +63,9 @@ def app_files(out, version, fw_name):
     for f in ICONS:
         shutil.copy(HERE / f, app / f)
     manifest = {
-        "name": "SLOOP", "short_name": "SLOOP", "id": "editor/", "start_url": "editor/", "scope": "./",
+        "name": "MENTAL", "short_name": "MENTAL", "id": "editor/", "start_url": "editor/", "scope": "./",
         "display": "standalone", "background_color": "#000000", "theme_color": "#000000",
-        "description": "SLOOP for the M-VAVE FM-1: the editor and the installer, also without internet",
+        "description": "MENTAL for the M-VAVE FM-1: the editor and the installer, also without internet",
         "icons": [{"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
                   {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
                   {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}],
@@ -122,8 +122,8 @@ def main(pkg, version, out):
         if html.count(mark) != 1:
             raise SystemExit(f"index_pkg.html must contain {mark} once; update make_site.py")
     html = html.replace("/*LIB*/", lib).replace("/*META*/", meta)
-    logo = HERE.parent / "assets" / "logo" / "sloop-logo.svg"     # the SLOOP logo, inline
-    html = html.replace("<!--LOGO-->", logo.read_text(encoding="utf-8") if logo.exists() else "<b>SLOOP</b>")
+    logo = HERE.parent / "assets" / "logo" / "mental-logo.svg"    # MENTAL's logo, inline
+    html = html.replace("<!--LOGO-->", logo.read_text(encoding="utf-8") if logo.exists() else "<b>MENTAL</b>")
     inst, ed, fw = out / "webapp" / "installer", out / "webapp" / "editor", out / "firmware"
     for d in (inst, ed, fw):
         d.mkdir(parents=True, exist_ok=True)
