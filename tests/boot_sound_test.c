@@ -137,13 +137,14 @@ int main(void)
         boot_as_main();
         printf("boot_sound: over Clipper's project: track 1 %s %s, TRN %d\n", ENGINES[trk[0].eng_req]->name,
                ENGINES[trk[0].eng_req]->presets[trk[0].preset].name, trk[0].p[P_TRANS]);
-        {   /* its TRN is the default sound's own, whatever that sound is (TRK_DEF) */
-            static track_t ref;
-            int16_t trn;
-            ref = trk[0];
-            set_engine_of(&ref, TRK_DEF[0][0]);
-            apply_preset_to(&ref, TRK_DEF[0][1]);
-            trn = ref.p[P_TRANS];
+        {   /* its TRN is the default sound's own, whatever that sound is (TRK_DEF): read it from the preset, not
+             * from a scratch track_t - apply_preset_to() takes the track's index from its address in trk[] */
+            const preset_t *pr = &ENGINES[TRK_DEF[0][0]]->presets[TRK_DEF[0][1]];
+            int16_t trn = TP[P_TRANS].def;
+            uint32_t x;
+            for (x = 0; x + 1u < sizeof pr->x / sizeof pr->x[0]; x += 2u)
+                if (pr->x[x] == P_TRANS + 1)
+                    trn = pr->x[x + 1u];
             check(trk[0].eng_req == TRK_DEF[0][0] && trk[0].preset == TRK_DEF[0][1] && trk[0].p[P_TRANS] == trn,
                   "over Clipper's working project: track 1 gets its default sound, with its TRN");
         }

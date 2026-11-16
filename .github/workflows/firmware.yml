@@ -70,7 +70,7 @@ jobs:
           set -o pipefail
           export AC79_SDK="$HOME/fw-AC79_AIoT_SDK"
           sh tests/run_tests.sh 2>&1 | tee tests.log || {
-            echo "::error title=tests failed::$(grep -B2 -A12 -i "fail" tests.log | head -80 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            echo "::error title=tests failed::$( { grep -n "TEST STEP FAILED" tests.log; grep -nE "FAIL$|FAILED|OVER BUDGET|CHANGED |ASSERT|Sanitizer|Segmentation" tests.log | grep -v "0 failed\\|0 kits failed\\|timed: a note"; } | head -40 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
             exit 1
           }
       - name: Browser preview
