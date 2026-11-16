@@ -199,44 +199,6 @@ KFM = dict(
 )
 
 KITS = [
-    # -- mentale (MENTAL): the kick is the bass. A sine on the low E to A (41 .. 55 Hz), its tail reaching
-    # the next beat at 170 .. 190 BPM, driven hard but kept under 80 Hz, with little click: on a rig the
-    # floor shakes, and in the track nothing else lives down there. MENTAL H is the same, dirtier and
-    # darker: a blown-out kick, metal hats, an industrial clank, for the horror side.
-    ("MENTAL", "MENTALE", 0, kit(K808,
-        KICK=S("sine", 48, 20, 36, 20, 760, 126, click=14, drive=52, filt=("lp", 1200, .25, "all")),
-        KICK2=S("sine", 41, 18, 40, 90, 1500, 126, click=8, drive=64, filt=("lp", 800, .3, "all")),
-        SNARE=S("tri", 180, 6, 14, 0, 130, 92, 1.7, 70, 26, "white", 112, 4, 230, ("hp", 1400, .18),
-                drive=46),
-        SNARE2=S("tri", 240, 5, 10, 0, 80, 86, 1.6, 60, 34, "white", 104, 0, 150, ("bp", 5000, .35),
-                 drive=36),
-        CLAP=dict(nlev=124, ndec=260, filt=("bp", 1300, .42), hpf=800),
-        CHH=dict(ndec=38, filt=("bp", 9400, .44), hpf=7000),
-        OHH=dict(ndec=420, filt=("bp", 9000, .42), hpf=6400),
-        TOMLO=S("sine", 92, 10, 70, 10, 520, 118, 1.5, 36, 14, "white", 22, 0, 40, ("lp", 1800, .15)),
-        TOMHI=S("sine", 138, 10, 70, 10, 430, 116, 1.5, 36, 14, "white", 22, 0, 40, ("lp", 2400, .15)),
-        CRASH=dict(ndec=2300, filt=("hp", 4200, .25)),
-        RIDE=dict(nlev=102, ndec=1100),
-        CONGA=S("fm", 300, 10, 40, 4, 220, 112, drive=40),
-        RIM=dict(drive=50), COWBELL=dict(drive=30))),
-    ("MENTAL H", "HORROR", 0x02, kit(K808,
-        KICK=S("sine", 45, 22, 34, 16, 620, 126, click=26, drive=104, src="white", nlev=44, ndec=8,
-               filt=("lp", 2600, .3)),
-        KICK2=S("sine", 41, 18, 44, 70, 1400, 126, click=12, drive=120, filt=("lp", 700, .35, "all")),
-        SNARE=S("tri", 170, 8, 14, 0, 150, 92, 1.8, 76, 34, "white", 118, 8, 300, ("hp", 1100, .22),
-                drive=96),
-        SNARE2=S("tri", 220, 6, 10, 0, 90, 88, 1.7, 64, 40, "white", 110, 0, 180, ("bp", 4200, .4),
-                 drive=80),
-        CLAP=dict(nlev=127, ndec=340, filt=("bp", 1050, .5), hpf=600),
-        CHH=dict(src="metal", ndec=56, filt=("bp", 8200, .5), hpf=6000),
-        OHH=dict(src="metal", ndec=560, filt=("bp", 7800, .48), hpf=5600),
-        TOMLO=S("fm", 86, 26, 220, 10, 520, 118, drive=110),
-        TOMHI=S("fm", 132, 26, 220, 10, 430, 116, drive=110),
-        CRASH=dict(src="metal", nlev=118, ndec=2600, filt=("hp", 3600, .3)),
-        RIDE=dict(src="metal", nlev=104, ndec=1500, filt=("bp", 4400, .62)),
-        CONGA=S("fm", 280, 14, 60, 4, 260, 112, drive=80),
-        RIM=S("fm", 1500, 6, 6, 0, 30, 98, click=36, drive=70),
-        COWBELL=S("bell", 480, 0, 5, 6, 340, 108, filt=("bp", 2300, .55, "all"), drive=50))),
     # -- the machines
     ("808", "HIP HOP", 0, K808),
     ("909", "HOUSE", 0, K909),
@@ -402,6 +364,44 @@ KITS = [
         RIDE=S(None, 320, src="cym", nlev=90, ndec=2400, filt=("bp", 6500, .35), hpf=3500, click=16),
         TOMLO=S("sine", 110, 3, 30, 6, 400, 106, 1.5, 40, 20, "white", 16, 0, 40, ("lp", 2000, .1)),
         TOMHI=S("sine", 160, 3, 30, 6, 340, 104, 1.5, 40, 20, "white", 16, 0, 40, ("lp", 2500, .1)))),
+    # -- mentale (MENTAL): the kick is the bass. A sine on the low E to A (41 .. 55 Hz), its tail reaching
+    # the next beat at 170 .. 190 BPM, driven hard but kept under 80 Hz, with little click: on a rig the
+    # floor shakes, and in the track nothing else lives down there. MENTAL H is the same, dirtier and
+    # darker: a blown-out kick, metal hats, an industrial clank, for the horror side.
+    ("MENTAL", "MENTALE", 0, kit(K808,
+        KICK=S("sine", 48, 20, 36, 20, 760, 126, click=14, drive=52, filt=("lp", 1200, .25, "all")),
+        KICK2=S("sine", 41, 18, 40, 90, 1500, 126, click=8, drive=64, filt=("lp", 800, .3, "all")),
+        SNARE=S("tri", 180, 6, 14, 0, 130, 92, 1.7, 70, 26, "white", 112, 4, 230, ("hp", 1400, .18),
+                drive=46),
+        SNARE2=S("tri", 240, 5, 10, 0, 80, 86, 1.6, 60, 34, "white", 104, 0, 150, ("bp", 5000, .35),
+                 drive=36),
+        CLAP=dict(nlev=124, ndec=260, filt=("bp", 1300, .42), hpf=800),
+        CHH=dict(ndec=38, filt=("bp", 9400, .44), hpf=7000),
+        OHH=dict(ndec=420, filt=("bp", 9000, .42), hpf=6400),
+        TOMLO=S("sine", 92, 10, 70, 10, 520, 118, 1.5, 36, 14, "white", 22, 0, 40, ("lp", 1800, .15)),
+        TOMHI=S("sine", 138, 10, 70, 10, 430, 116, 1.5, 36, 14, "white", 22, 0, 40, ("lp", 2400, .15)),
+        CRASH=dict(ndec=2300, filt=("hp", 4200, .25)),
+        RIDE=dict(nlev=102, ndec=1100),
+        CONGA=S("fm", 300, 10, 40, 4, 220, 112, drive=40),
+        RIM=dict(drive=50), COWBELL=dict(drive=30))),
+    ("MENTAL H", "HORROR", 0x02, kit(K808,
+        KICK=S("sine", 45, 22, 34, 16, 620, 126, click=26, drive=104, src="white", nlev=44, ndec=8,
+               filt=("lp", 2600, .3)),
+        KICK2=S("sine", 41, 18, 44, 70, 1400, 126, click=12, drive=120, filt=("lp", 700, .35, "all")),
+        SNARE=S("tri", 170, 8, 14, 0, 150, 92, 1.8, 76, 34, "white", 118, 8, 300, ("hp", 1100, .22),
+                drive=96),
+        SNARE2=S("tri", 220, 6, 10, 0, 90, 88, 1.7, 64, 40, "white", 110, 0, 180, ("bp", 4200, .4),
+                 drive=80),
+        CLAP=dict(nlev=127, ndec=340, filt=("bp", 1050, .5), hpf=600),
+        CHH=dict(src="metal", ndec=56, filt=("bp", 8200, .5), hpf=6000),
+        OHH=dict(src="metal", ndec=560, filt=("bp", 7800, .48), hpf=5600),
+        TOMLO=S("fm", 86, 26, 220, 10, 520, 118, drive=110),
+        TOMHI=S("fm", 132, 26, 220, 10, 430, 116, drive=110),
+        CRASH=dict(src="metal", nlev=118, ndec=2600, filt=("hp", 3600, .3)),
+        RIDE=dict(src="metal", nlev=104, ndec=1500, filt=("bp", 4400, .62)),
+        CONGA=S("fm", 280, 14, 60, 4, 260, 112, drive=80),
+        RIM=S("fm", 1500, 6, 6, 0, 30, 98, click=36, drive=70),
+        COWBELL=S("bell", 480, 0, 5, 6, 340, 108, filt=("bp", 2300, .55, "all"), drive=50))),
 ]
 
 
@@ -441,6 +441,7 @@ def main(path):
             L.append("        {" + ", ".join(str(x) for x in v) + f"}},   /* {lane} */")
         L.append("    }},")
     L.append("};")
+    L.append("#define DS_KIT_MENTAL " + str(next(i for i, k in enumerate(KITS) if k[0] == "MENTAL")) + "u")
     L.append("#define DS_KIT_NAME_LIST " + ", ".join(f'"{k[0]}"' for k in KITS))
     L.append("#define DS_KIT_STYLE_LIST " + ", ".join(f'"{k[1]}"' for k in KITS))
     Path(path).write_text("\n".join(L) + "\n")

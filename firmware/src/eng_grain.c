@@ -451,7 +451,7 @@ static const preset_t GRAIN_PRESETS[] = {
      * its grains sparse and wide, so it breathes; VOID is almost still, for an intro or a breakdown */
     {"MNT ABYSS", {3, 55, 120, 85, -24, 25, 18, 30}, {100, 110, 127, 115}, 0, 0, FX(0, 25, 20, 95)},
     {"MNT RITUAL", {4, 35, 110, 55, -12, 60, 40, 45}, {110, 100, 127, 120}, 0, 0, FX(0, 40, 35, 110)},
-    {"MNT VOID", {5, 60, 127, 40, -12, 15, 8, 25}, {127, 110, 127, 127}, 0, 0, FX(0, 20, 25, 120)},
+    {"MNT VOID", {5, 60, 127, 40, -12, 15, 8, 25}, {120, 110, 120, 104}, 0, 0, FX(0, 20, 25, 120)},
 };
 
 static const engine_t ENG_GRAIN = {

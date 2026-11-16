@@ -580,7 +580,7 @@ UI_SMALL static void go_home(void)
 /* the parts' sounds at power-on (engine, preset): bass, pad, lead */
 /* MENTAL powers on ready to play mental tekno: the sub bass under the kick, the acid over it, and a
  * drone behind. Track 4 is the drums, on the MENTAL kit (drums.c DRUM_DEFAULT_KIT). */
-static const uint8_t TRK_DEF[NPART][2] = {{0, 24}, {0, 22}, {8, 8}};   /* ANALOG MNT SUB, ANALOG MNT ACID, GRAIN MNT ABYSS */
+static const uint8_t TRK_DEF[NPART][2] = {{0, 24}, {8, 9}, {0, 22}};   /* ANALOG MNT SUB, GRAIN MNT RITUAL, ANALOG MNT ACID */
 UI_SMALL static uint32_t trk_def_engine(uint32_t i) { return i < NPART ? TRK_DEF[i][0] : 0u; }
 
 UI_SMALL static int seq_is_empty(const track_t *t) { return track_empty(t); }
@@ -715,6 +715,8 @@ UI_SMALL static void select_engine(uint32_t e)
 enum { BK_BASS, BK_KEYS, BK_ORGAN, BK_PAD, BK_LEAD, BK_PLUCK, BK_STAB, BK_FX };
 static const char *const BANK_KIND[] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "STAB", "FX"};
 static const struct { uint8_t kind, e; const char *name; } BANK[] = {
+    /* MENTAL: the mentale sounds first in their kinds, so the PRESETS knob reaches them at once */
+    {BK_BASS, 0, "MNT SUB"}, {BK_BASS, 0, "MNT ACID"},
     {BK_BASS, 0, "808 BOOM"}, {BK_BASS, 0, "808 DIRTY"}, {BK_BASS, 0, "808 SLIDE"}, {BK_BASS, 0, "SUB BASS"},
     {BK_BASS, 0, "PLUGG BASS"}, {BK_BASS, 0, "REESE"}, {BK_BASS, 0, "WOBBLE"}, {BK_BASS, 0, "ACID 303"},
     {BK_BASS, 1, "FM BASS"}, {BK_BASS, 2, "CZ BASS"}, {BK_BASS, 6, "FAT BASS"}, {BK_BASS, 0, "FUNK BASS"},
@@ -727,7 +729,10 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_ORGAN, 7, "SOUL ORGAN"}, {BK_ORGAN, 7, "GOSPEL"}, {BK_ORGAN, 7, "JAZZ ORGAN"},
     {BK_ORGAN, 7, "DIRTY B3"}, {BK_ORGAN, 7, "HOUSE ORGN"}, {BK_ORGAN, ENGI_FM6, "DRAWBARS"},
     {BK_ORGAN, 6, "ACCORDION"}, {BK_ORGAN, 7, "ROCK ORGAN"}, {BK_ORGAN, 7, "CHAPEL"},
-    {BK_ORGAN, 7, "REGGAE ORG"}, {BK_PAD, 0, "WARM PAD"}, {BK_PAD, 6, "SAW PAD"}, {BK_PAD, 1, "GLASS PAD"},
+    {BK_ORGAN, 7, "REGGAE ORG"},
+    {BK_PAD, ENGI_GRAIN, "MNT ABYSS"}, {BK_PAD, ENGI_GRAIN, "MNT RITUAL"}, {BK_PAD, ENGI_GRAIN, "MNT VOID"},
+    {BK_PAD, ENGI_NOISE, "MNT CAVERN"},
+    {BK_PAD, 0, "WARM PAD"}, {BK_PAD, 6, "SAW PAD"}, {BK_PAD, 1, "GLASS PAD"},
     {BK_PAD, 0, "DARK STR"}, {BK_PAD, 2, "CZ STRING"}, {BK_PAD, 0, "ATMOS PAD"}, {BK_PAD, 8, "LOFI CLOUD"},
     {BK_PAD, 8, "VIBE HAZE"}, {BK_PAD, 5, "CHOIR AAH"}, {BK_PAD, 5, "SOUL OOH"}, {BK_PAD, ENGI_FM6, "SOFT PAD"},
     {BK_PAD, 6, "ENSEMBLE"}, {BK_PAD, 8, "STR CLOUD"}, {BK_PAD, 8, "SHIMMER"}, {BK_PAD, 8, "DRONE"},
@@ -758,6 +763,7 @@ static const struct { uint8_t kind, e; const char *name; } BANK[] = {
     {BK_FX, ENGI_PHYS, "MEMB TOMS"}, {BK_FX, ENGI_NOISE, "RAIN"}, {BK_FX, ENGI_NOISE, "NZ METAL"},
     {BK_FX, ENGI_PHYS, "TABLA"}, {BK_FX, ENGI_PHYS, "CONGA"}, {BK_FX, ENGI_PHYS, "TIMPANI"},
     {BK_FX, ENGI_NOISE, "VINYL"}, {BK_FX, ENGI_NOISE, "HISS"}, {BK_FX, ENGI_NOISE, "RISER"},
+    {BK_FX, ENGI_NOISE, "MNT SCREAM"}, {BK_FX, ENGI_NOISE, "MNT GRIND"}, {BK_LEAD, 0, "MNT SCREECH"},
     {BK_FX, ENGI_NOISE, "NZ SNARE"}, {BK_FX, ENGI_NOISE, "BITCRUSH"}, {BK_FX, ENGI_NOISE, "RADIO"},
     {BK_FX, 3, "CHIP NOISE"},
 #if FELUCCA_SLICE
