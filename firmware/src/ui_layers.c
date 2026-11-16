@@ -22,7 +22,7 @@
  * GLO keys come to the UI through seq.c lk_q. HOLD: REC held clears the track, SAVE held saves the
  * project (a ring fills; let go before and nothing happens). */
 static const uint8_t LAYER_BTN[LY_COUNT] = {NB, B_FX, B_EDIT, B_ARP, B_SEQ, B_SCL, B_GLO, B_SAVE, B_ENV, B_LFO};
-static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song", "jump", "reset"};
+static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song", "jump", "perform"};
 static void section_store(uint32_t s);                  /* project.c */
 static void section_load(uint32_t s);
 static uint8_t sec_armed;                               /* store over a used section: the key again within 3 s */
@@ -361,23 +361,53 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
                 step_up((uint32_t)w);
             if (layer == LY_MIX && w == 8)
                 fill_held = 0;                              /* GLO + key 9 let go: the fill ends */
+            if (layer == LY_PERF && w == 14)
+                fill_held = 0;                              /* (MENTAL) PERFORM key 15 let go: the same */
         }
         return;
     }
-    if (layer == LY_RESET) {                            /* (MENTAL) keys 1-4 a track, key 16 the whole machine */
+    if (layer == LY_PERF) {                            /* (MENTAL) PERFORM: the whole live surface on the 16 keys,
+                                                        * LFO + HOME locks it open and nothing has to be held */
         int32_t w = punch_key(k);
-        char m[16];
+        char b[2] = {0, 0};
         if (w < 0)
             return;
-        if (w == 15) {
+        if (w < (int32_t)NTRK) {                        /* 1-4: cut a track and bring it back (lit = it plays) */
+            trk[w].p[P_MUTE] = (int16_t)!trk[w].p[P_MUTE];
+        } else if (w < 8) {                             /* 5-8: solo */
+            song.solo ^= (uint8_t)(1u << (w - 4));
+        } else if (w < 12) {                            /* 9-12: the sections A-D, as SAVE held plays them */
+            uint32_t sec = (uint32_t)(w - 8);
+            b[0] = (char)('A' + sec);
+            if (arrangement_clock.running) {
+                ui_message("SONG PLAYS");
+            } else if (!((arrangement_ready() >> sec) & 1u)) {
+                ui_say("EMPTY ", b);
+            } else if (song.playing) {
+                fm1_irq_off();
+                chain_n = 0;
+                live_req = (int8_t)sec;
+                fm1_irq_on();
+                ui_say("NEXT: ", b);
+            } else {
+                section_load(sec);
+                ui_say("LOADED ", b);
+            }
+        } else if (w == 12) {                           /* 13: this track back to neutral */
+            char m[16];
+            reset_track(song.sel % NTRK);
+            str_cpy(m, "RESET TRACK ", sizeof m);
+            fmt_int(m + str_len(m), (int32_t)(song.sel % NTRK) + 1);
+            ui_message(m);
+        } else if (w == 13) {                           /* 14: the whole machine back to neutral */
             reset_all();
             ui_message("RESET ALL");
-        } else if (w < (int32_t)NTRK) {
-            reset_track((uint32_t)w);
-            str_cpy(m, "RESET TRACK ", sizeof m);
-            fmt_int(m + str_len(m), w + 1);
-            ui_message(m);
+        } else if (w == 14) {                           /* 15: a fill while it is held */
+            fill_held = 1;
+        } else {                                        /* 16: tap the tempo */
+            tap_tempo();
         }
+        ui.force = 1;
         return;
     }
     switch (layer) {
@@ -1000,24 +1030,51 @@ UI_SMALL static void layer_screen_draw(void)
         ratio[3] = (t->p[P_TRANS] + 24) * 1000 / 48;
         break;
     }
-    case LY_RESET: {                                    /* (MENTAL) back to neutral: a track, or everything */
+    case LY_PERF: {                                     /* (MENTAL) PERFORM: cut, solo, sections, reset, fill, tap */
+        uint32_t ready = arrangement_ready();
         col = C_WHITE;
-        str_cpy(sub, "1-4 a track    16 everything", sizeof sub);
+        str_cpy(sub, "cut  solo  A-D  reset  fill  tap", sizeof sub);
         for (i = 0; i < 16u; i++) {
-            if (i < NTRK) {
-                const track_t *rt = &trk[i];
-                int moved = rt->p[P_TFLT] != 0 || rt->p[P_MUTE] != 0 || seq_trans[i] != 0;
-                str_cpy(tl[i].lab, "trk 1", 8);
+            tl[i].bg = TE_G1;
+            tl[i].fg = TE_G3;
+            tl[i].top = 0;
+            if (i < NTRK) {                             /* lit = the track plays, dark = cut (as the machines do it) */
+                int on = !trk[i].p[P_MUTE];
+                str_cpy(tl[i].lab, "cut 1", 8);
                 tl[i].lab[4] = (char)('1' + i);
-                tl[i].bg = moved ? TE_COL[i] : TE_G1;
-                tl[i].fg = moved ? C_BLACK : TE_G3;
-            } else if (i == 15u) {
-                str_cpy(tl[i].lab, "ALL", 8);
-                tl[i].bg = C_WHITE;
-                tl[i].fg = C_BLACK;
+                tl[i].bg = on ? TE_COL[i] : TE_G1;
+                tl[i].fg = on ? C_BLACK : TE_G3;
+            } else if (i < 8u) {
+                uint32_t k2 = i - 4u;
+                int so = (song.solo >> k2) & 1u;
+                str_cpy(tl[i].lab, "solo 1", 8);
+                tl[i].lab[5] = (char)('1' + k2);
+                tl[i].bg = so ? C_WHITE : TE_G1;
+                tl[i].fg = so ? C_BLACK : TE_G3;
+                tl[i].top = TE_DIM[k2];
+            } else if (i < 12u) {
+                uint32_t sec = i - 8u;
+                int has = (ready >> sec) & 1u;
+                int playing = live_sec == (int8_t)sec && !arrangement_clock.running;
+                tl[i].lab[0] = (char)('A' + sec);
+                tl[i].lab[1] = 0;
+                tl[i].bg = has ? (playing ? TE_COL[sec] : TE_DIM[sec]) : TE_G1;
+                tl[i].fg = has ? C_BLACK : TE_G3;
+                tl[i].top = live_req == (int8_t)sec ? C_WHITE : 0;
+            } else if (i == 12u) {
+                str_cpy(tl[i].lab, "rst trk", 8);
+            } else if (i == 13u) {
+                str_cpy(tl[i].lab, "RST ALL", 8);
+                tl[i].bg = TE_G2;
+                tl[i].fg = C_WHITE;
+            } else if (i == 14u) {
+                str_cpy(tl[i].lab, "fill", 8);
+                tl[i].bg = fill_now ? C_WHITE : TE_G1;
+                tl[i].fg = fill_now ? C_BLACK : TE_G4;
             } else {
-                tl[i].bg = TE_G1;
-                tl[i].fg = TE_G3;
+                str_cpy(tl[i].lab, "tap>", 8);
+                tl[i].bg = song.playing && clk_pos < BEAT_U / 4u ? C_WHITE : TE_G2;
+                tl[i].fg = tl[i].bg == C_WHITE ? C_BLACK : C_WHITE;
             }
         }
         break;

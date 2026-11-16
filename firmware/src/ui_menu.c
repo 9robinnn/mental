@@ -137,22 +137,22 @@ UI_SMALL static void draw_menu(void)
         cv_oy = pass ? -124 : 0;
         if (ui.menu == 3) {                         /* (MENTAL) the live cheat sheet: 8 px a character, 30 to a line */
             static const char *const HELP[][2] = {
-                {"HOME",     "K1 MASTER K3 CUT FILT"},
-                {"GLO+HOME", "LOCK: 1 PRESS = MUTE"},
+                {"LFO+HOME", "THE LIVE SURFACE"},
+                {"  1-4",    "CUT A TRACK"},
+                {"  5-8",    "SOLO"},
+                {"  9-12",   "SECTIONS A-D"},
+                {"  13/14",  "RESET TRACK / ALL"},
+                {"  15/16",  "FILL / TAP TEMPO"},
+                {"HOME",     "BACK TO PLAYING"},
+                {"KNOBS",    "K1 MASTER K3 CUTOFF"},
                 {"ALGO",     "TRACK, PRESETS SOUND"},
-                {"FX",       "HOLD: 27 PUNCH FX"},
-                {"ENV",      "HOLD: STEP JUMP"},
-                {"GLO",      "HOLD: MUTE SOLO LVL"},
-                {"SEQ",      "HOLD: STEPS, K2 DIV"},
-                {"EDIT",     "HOLD: ERASE LIVE"},
-                {"ARP",      "HOLD: NOTE REPEAT"},
-                {"SAVE",     "HOLD: A-D SECTIONS"},
                 {"SEL+OCT",  "PATTERN +-1 OCTAVE"},
-                {"LFO",      "HOLD: RESET, 16=ALL"},
-                {"SEL",      "HOLD: KEY SCL CHORD"},
-                {"REC",      "HOLD: CLEAR TRACK"},
-                {"EDIT+OCT", "UNDO / REDO"},
-                {"TEXTURE",  "IN GLO: 3 DRONES"},
+                {"ENV",      "HOLD: STEP JUMP"},
+                {"FX",       "HOLD: 27 PUNCH FX"},
+                {"SEQ",      "HOLD: STEPS, K2 DIV"},
+                {"ARP",      "HOLD: NOTE REPEAT"},
+                {"EDIT",     "HOLD: ERASE LIVE"},
+                {"ANY+HOME", "LOCKS THAT LAYER ON"},
             };
             uint32_t h;
             for (h = 0; h < sizeof HELP / sizeof HELP[0]; h++) {

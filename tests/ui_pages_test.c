@@ -1186,30 +1186,48 @@ int main(int argc, char **argv)
         lights_keys = KEYS_OFF; lights_notes = 0; lights_lvl = LIGHTS_OFF;
         go_home(); ui.force = 1; frame();
     }
-    {   /* (MENTAL) RESET: LFO held, keys 1-4 put a track back to neutral, key 16 the whole machine.
-         * It must touch what a performance moved and nothing else: not the pattern, not the mix. */
+    {   /* (MENTAL) PERFORM (LFO held, LFO + HOME locks it): the whole live surface on the 16 keys -
+         * 1-4 cut a track, 5-8 solo, 9-12 the sections, 13 resets the track, 14 the machine, 15 fill, 16 tap. */
         step_t kept[NSTEP];
         int16_t lvl0;
         go_home(); ui.force = 1; frame();
         tap(B_LFO);
-        check(cur_fam() == FAM_LFO, "RESET: LFO tapped still opens the LFO pages");
+        check(cur_fam() == FAM_LFO, "PERFORM: LFO tapped still opens the LFO pages");
         go_home(); ui.force = 1; frame();
-        trk[0].p[P_TFLT] = 40; trk[0].p[P_MUTE] = 1; seq_trans_set(0, 12);
+        trk[0].p[P_TFLT] = 40; seq_trans_set(0, 12);
         trk[1].p[P_TFLT] = -30;
-        song.g[G_FILT] = 55; song.solo = 2u;
+        song.g[G_FILT] = 55;
         trk[0].step[0].time = ST_NOTE; trk[0].step[0].n = 1; trk[0].step[0].note[0] = 50;
         memcpy(kept, trk[0].step, sizeof kept);
         lvl0 = trk[0].p[P_LEVEL];
         press(B_LFO); frame();
-        key(0);                                          /* key 1: track 1 only */
-        check(!trk[0].p[P_TFLT] && !trk[0].p[P_MUTE] && !seq_trans[0], "RESET: key 1 puts track 1 back to neutral");
-        check(trk[1].p[P_TFLT] == -30 && song.g[G_FILT] == 55, "RESET: ... and leaves the other track and the master alone");
+        key(0);                                          /* white key 1: cut track 1 */
+        check(trk[0].p[P_MUTE], "PERFORM: key 1 cuts track 1 in one press");
+        key(0);
+        check(!trk[0].p[P_MUTE], "PERFORM: ... and the same key brings it back");
+        key(7);                                          /* white key 5: solo track 1 */
+        check(song.solo == 1u, "PERFORM: key 5 solos track 1");
+        key(7);
+        check(!song.solo, "PERFORM: ... and clears it");
+        key(21);                                         /* white key 13: this track back to neutral */
+        check(!trk[0].p[P_TFLT] && !seq_trans[0], "PERFORM: key 13 puts the selected track back to neutral");
+        check(trk[1].p[P_TFLT] == -30 && song.g[G_FILT] == 55, "PERFORM: ... and leaves the others and the master alone");
+        key(23);                                         /* white key 14: the whole machine */
+        check(!trk[1].p[P_TFLT] && !song.g[G_FILT] && !song.solo, "PERFORM: key 14 resets every track, the master filter and solo");
         check(trk[0].p[P_LEVEL] == lvl0 && !memcmp(kept, trk[0].step, sizeof kept),
-              "RESET: ... and never the mix nor the pattern");
-        key(26);                                         /* the 16th white key: everything */
-        check(!trk[1].p[P_TFLT] && !song.g[G_FILT] && !song.solo, "RESET: key 16 clears every track, the master filter and solo");
-        check(!memcmp(kept, trk[0].step, sizeof kept), "RESET ALL: the patterns are still there");
+              "PERFORM: neither reset touches the mix or the pattern");
+        trk[1].p[P_MUTE] = 1; song.solo = 4u; ui.force = 1; frame(); ppm("layer-perform");
+        trk[1].p[P_MUTE] = 0; song.solo = 0;
+        tap(B_HOME);                                     /* LFO held + HOME: locked open */
         release(B_LFO); frames(2);
+        check(ly_lock == LY_PERF, "PERFORM: LFO + HOME locks it open, nothing held");
+        key(0);
+        check(trk[0].p[P_MUTE], "PERFORM locked: a key still cuts its track with no button held");
+        key(0);
+        tap(B_HOME);                                     /* and HOME alone leaves it */
+        frames(2);
+        check(ly_lock == LY_PLAY, "PERFORM: HOME alone gives the keys back to playing");
+        memset(trk[0].step, 0, sizeof trk[0].step);
         go_home(); ui.force = 1; frame();
     }
 

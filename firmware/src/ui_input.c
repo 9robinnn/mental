@@ -790,7 +790,7 @@ UI_SMALL static void layer_tap(uint32_t layer)
     case LY_JUMP:                                         /* (MENTAL) ENV is the STEP JUMP layer held; tapped it is still ENV */
         open_family(FAM_ENV);
         break;
-    case LY_RESET:                                        /* (MENTAL) LFO is the RESET layer held; tapped it is still LFO */
+    case LY_PERF:                                        /* (MENTAL) LFO is the RESET layer held; tapped it is still LFO */
         open_family(FAM_LFO);
         break;
     case LY_ERASE:
@@ -1178,7 +1178,7 @@ UI_SMALL static void ui_input(void)
         home_eat = 0;
     }
     pressed &= ~(ly_bit[LY_FX] | ly_bit[LY_ERASE] | ly_bit[LY_ROLL] | ly_bit[LY_STEP] | ly_bit[LY_SCALE] | ly_bit[LY_MIX] |
-                 ly_bit[LY_SONG] | ly_bit[LY_JUMP] | ly_bit[LY_RESET]);
+                 ly_bit[LY_SONG] | ly_bit[LY_JUMP] | ly_bit[LY_PERF]);
     holds_input(pressed, fm1_ms);
     pressed &= ~((on_song_page() ? 0u : 1u << panel.btn[B_REC]) | (1u << panel.btn[B_SAVE]));
     if (layered || ui.hold_kind) {                      /* a layer / a hold: the rest waits */
