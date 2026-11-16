@@ -92,7 +92,7 @@ the site under [`bit/`](https://rustypawz.github.io/fm1-HYP1/bit/).
 - **The keys** set the scale, as on AMB-1. **By hand**: on a voice's page, SEL + ENV takes the pad, drone or acid
   off the algorithm, and on its pages the keys play it over the song (the pad up to four notes, the drone
   and the acid one, the acid sliding 303-style); SEL + ENV again gives it back. **SEL + ALGORITHM**
-  changes the sound of the voice on screen, or the whole kit on the drums' pages. Tempo runs from 70 to 190.
+  changes the sound of the voice on screen, or the whole kit on the drums' pages. Tempo runs from 70 to 200.
 - **Links** (SEL + SEQ, amounts on the Links page): the drums patched into the voices. Each kick opens
   the drone's filter, each snare or clap flashes the pad, hats accent the acid, and the perc lane can
   clock the acid line.

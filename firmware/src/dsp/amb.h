@@ -34,7 +34,7 @@
 #define EN_NSTYLE 5                    /* the old styles (before 1.0.27): a stored piece's is turned into sounds
                                         * and a kit (en_style_sounds); they were kits 0..4 */
 #define EN_NSOUND 16                   /* the sounds each of pad, drone and acid can play */
-#define EN_NKIT 8                      /* the sounds each drum (kick, snare + clap, hats, perc) can play */
+#define EN_NKIT 9                      /* the sounds each drum (kick, snare + clap, hats, perc) can play */
 enum { EN_V_PAD, EN_V_DRONE, EN_V_ACID };   /* the voices the keys can play (en_note) */
 
 /* modes: pools relative to the root (bit i: root + i semitones) */
