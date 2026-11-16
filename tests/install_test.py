@@ -6,7 +6,7 @@ The fake device is the one in web/test_web.mjs: identity on the handshake,
 then "device asks, host answers" reads of the logical image. Run from the repo root:
   python3 tests/install_test.py
 Also checks logical_image/product_of against web/fm1pkg.js (needs node and
-build/amb.fwsc, skipped otherwise)."""
+build/felucca.fwsc, skipped otherwise)."""
 import io
 import queue
 import shutil
@@ -140,11 +140,30 @@ class FakeFM1:
 
 # ----------------------------------------------------------------- helpers ---
 
-def package(product="FM-1_900", marker=True, size=0x2000):
-    raw = bytearray((i * 7) & 0xFF for i in range(size + I.BLOCKS))
+def package(product="FM-1_900", marker=True, size=0x2000, damage=False):
+    """a package with a valid header and file list (one file: 0x400 to the end), as fm1pkg_make writes"""
+    img = bytearray((i * 7) & 0xFF for i in range(size))
+    img[0x1800:0x1800 + 16] = I.LOADER_MARK if marker else bytes(16)
+    data = bytes(img[0x400:])
+    e = bytearray(0x50)
+    e[0:16] = (0).to_bytes(2, "little") + (0).to_bytes(2, "little") + I._crc16(data).to_bytes(2, "little") + bytes(2) + \
+        (0x400).to_bytes(4, "little") + len(data).to_bytes(4, "little")
+    e[0x40:0x49] = b"flash.bin"
+    lst = I._dec(bytes(e))
+    hdr = bytearray(0x40)
+    hdr[4:8] = size.to_bytes(4, "little")
+    hdr[8:10] = (1).to_bytes(2, "little")
+    hdr[2:4] = I._crc16(lst).to_bytes(2, "little")
+    hdr[0:2] = I._crc16(bytes(hdr[2:0x40])).to_bytes(2, "little")
+    img[0:0x40] = I._dec(bytes(hdr))
+    img[0x40:0x90] = lst
+    if damage:
+        img[0x1000] ^= 1
+    raw = bytearray()
     for i in range(I.BLOCKS):
-        raw[i * I.BLK + I.KEEP] = (ord(product[i]) + i + 1) & 0xFF if i < len(product) else 0x7D
-    raw[0x1800:0x1800 + 16] = I.LOADER_MARK if marker else bytes(16)
+        m = (ord(product[i]) + i + 1) & 0xFF if i < len(product) else 0x7D
+        raw += img[i * I.KEEP:(i + 1) * I.KEEP] + bytes([m])
+    raw += img[I.BLOCKS * I.KEEP:]
     return bytes(raw)
 
 
@@ -178,8 +197,6 @@ def wire():
        and ~sum(u[6:17]) & 0xFF == u[17], "response: header, address, data, checksum")
     raw = package("FM-1_906")
     ok(I.product_of(raw) == "FM-1_906" and len(I.logical_image(raw)) == len(raw) - 20, "product_of / logical_image (synthetic)")
-    raw = package("FM-1_9001000")                  # X0X from 0.10: major, minor, patch, two digits each
-    ok(I.product_of(raw) == "FM-1_9001000", "product_of: a 12-character identity")
 
 
 def installs():
@@ -191,12 +208,10 @@ def installs():
     rc, out, err = cli([p, "--yes"], dev)
     ok(rc == 0 and dev.bad == 0 and dev.upgrades == 2 and dev.served == 11 and "done: the FM-1 runs FM-1_900" in out
        and "100%" in out, f"install: running -> loader -> Felucca ({dev.served} reads)")
-
-    raw10 = package("FM-1_9001000")
-    dev = FakeFM1(I.logical_image(raw10), identity="FM-1_909", after_write="FM-1_9001000")
-    rc, out, err = cli([pkgfile("x10.fwsc", raw10), "--yes"], dev)
-    ok(rc == 0 and dev.bad == 0 and "done: the FM-1 runs FM-1_9001000" in out,
-       "install: 0.9 (FM-1_909) -> 0.10 (FM-1_9001000), the longer identity verified after")
+    dev = FakeFM1(image, identity="FM-1_901", name="Clipper")
+    rc, out, err = cli([p, "--yes"], dev)
+    ok(rc == 0 and dev.bad == 0 and "done: the FM-1 runs FM-1_900" in out,
+       "install: an FM-1 under CLIPPER (port 'Clipper') -> found, SLOOP installed")
 
     dev = FakeFM1(image, identity="ota-FM-1_900", name="Felucca Update")
     rc, out, err = cli([p, "--yes"], dev)
@@ -246,6 +261,9 @@ def errors():
     dev = FakeFM1(image, identity="XY-9_001", name="usb-midi")
     rc, out, err = cli([p, "--yes"], dev)
     ok(rc == 6 and dev.upgrades == 0, "another model -> exit 6, nothing sent")
+    dev = FakeFM1(image, identity="ota-FM-1_015", name="FM-1 Update")
+    rc, out, err = cli([p, "--yes"], dev)
+    ok(rc == 6 and dev.upgrades == 0 and "another firmware" in err, "another firmware's update loader -> exit 6, nothing sent")
 
     class Stuck(FakeFM1):          # the loader never shows up
         def boot(self, identity, name):
@@ -262,6 +280,9 @@ def errors():
     dev = FakeFM1(I.logical_image(package(marker=False)))
     rc, out, err = cli([plain, "--yes", "--force"], dev)
     ok(rc == 0 and dev.bad == 0, "... installs with --force")
+    dev = FakeFM1(image)
+    rc, out, err = cli([pkgfile("damaged.fwsc", package(damage=True)), "--yes"], dev)
+    ok(rc == 2 and "damaged package" in err and dev.sent == [], "damaged package (a file's CRC) -> exit 2, no MIDI")
     rc, out, err = cli([pkgfile("short.fwsc", b"\0" * 100), "--yes"], FakeFM1(image))
     ok(rc == 2 and "too short" in err, "not a package -> exit 2")
     rc, out, err = cli([str(TMP / "missing.fwsc"), "--yes"], FakeFM1(image))
@@ -269,9 +290,9 @@ def errors():
 
 
 def against_js():
-    clean = ROOT / "build/amb.fwsc"
+    clean = ROOT / "build/felucca.fwsc"
     if not shutil.which("node") or not clean.exists():
-        print("logical image vs fm1pkg.js: skipped (needs node and build/amb.fwsc)")
+        print("logical image vs fm1pkg.js: skipped (needs node and build/felucca.fwsc)")
         return
     js = ("import { logicalImage, productOf } from %r; import { readFileSync } from 'node:fs';"
           "const p = readFileSync(process.argv[1]); process.stderr.write(productOf(p));"

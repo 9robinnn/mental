@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# MENTAL: builds the firmware with JieLi's toolchain on GitHub's Linux runner, runs the host tests,
-# and keeps the installable package (.fwsc) as a downloadable artifact of the run.
-# Then it publishes the site to GitHub Pages: the web installer with this build in it, the browser emulator
-# and the .fwsc. Adapted from HYP-1's workflow (RustyPawz/fm1-HYP1). Settings > Pages: Source = GitHub Actions.
+# MENTAL: build the firmware with JieLi's toolchain on GitHub's Linux runner, run the host tests, build
+# the browser preview and the site (installer + editor), and publish it to GitHub Pages.
+# Settings > Pages: Source = GitHub Actions.
 name: firmware
 on:
   push:
@@ -25,7 +24,7 @@ jobs:
           python-version: "3.12"
       - name: Tools
         run: |
-          pip install Pillow cairosvg markdown
+          pip install Pillow
           sudo apt-get update -qq && sudo apt-get install -y -qq clang lld >/dev/null
           command -v wasm-ld >/dev/null || sudo ln -sf "$(ls /usr/bin/wasm-ld* | head -1)" /usr/local/bin/wasm-ld
       - name: JieLi toolchain and SDK (cached)
@@ -56,7 +55,7 @@ jobs:
             ~/fw-AC79_AIoT_SDK
           key: jieli-ac79-v1.2.1
       - name: Version
-        run: echo "V=0.$((GITHUB_RUN_NUMBER / 100 % 100)).$((GITHUB_RUN_NUMBER % 100))" >> "$GITHUB_ENV"
+        run: echo "V=0.$((GITHUB_RUN_NUMBER % 10))" >> "$GITHUB_ENV"
       - name: Build the firmware
         run: |
           set -o pipefail
@@ -64,24 +63,23 @@ jobs:
             echo "::error title=build failed::$(tail -60 build.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
             exit 1
           }
-          grep -E "^\s+ok\s" build.log | sed 's/^\s*ok\s*/::notice title=check::/' || true
           ls -la build/*.fwsc
       - name: Tests
         run: |
           set -o pipefail
           export AC79_SDK="$HOME/fw-AC79_AIoT_SDK"
-          tests/run_tests.sh 2>&1 | tee tests.log || {
-            echo "::error title=tests failed::$(grep -A12 FAIL tests.log | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+          sh tests/run_tests.sh 2>&1 | tee tests.log || {
+            echo "::error title=tests failed::$(grep -B2 -A12 -i "fail" tests.log | head -80 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
             exit 1
           }
+      - name: Browser preview
+        run: python3 tools/build_preview.py
+      - name: Site (installer, editor, download)
+        run: python3 web/make_site.py "build/felucca-$V.fwsc" "$V" build/pages
       - uses: actions/upload-artifact@v4
         with:
           name: mental-firmware-${{ env.V }}
-          path: build/amb-${{ env.V }}.fwsc
-      - name: Site (installer, emulator, download)
-        run: |
-          EN_VERSION="$V" sh web/emu/build_clang.sh
-          REPO_URL="https://github.com/$GITHUB_REPOSITORY" python3 tools/make_pages.py "build/amb-$V.fwsc" "$V" build/pages
+          path: build/felucca-${{ env.V }}.fwsc
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/pages
@@ -90,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}install/
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -12,6 +12,8 @@
 
 #define FELUCCA_ID "FM-1_900"
 #define FELUCCA_OTA_DRYRUN 0
+static int recovery_active;
+#define OTA_IDENTITY (recovery_active ? "FM-1_000" : FELUCCA_ID)
 
 static uint8_t nor[0x100000];
 static uint8_t *logical;
@@ -176,6 +178,12 @@ int main(int argc, char **argv)
         bad += check("handshake answered", ident_replies == 1);
         bad += check("identity frame is " FELUCCA_ID,
                      ota_msg[2] == 0x11 && !memcmp(ota_msg + 6, FELUCCA_ID, sizeof FELUCCA_ID - 1));
+        recovery_active = 1;
+        host_reply(m, 7);
+        ota_service();
+        bad += check("recovery identity is distinct from a successful normal boot",
+                     ident_replies == 2 && !memcmp(ota_msg + 6, "FM-1_000", 9));
+        recovery_active = 0;
     }
 
     /* full session */

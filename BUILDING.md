@@ -1,15 +1,20 @@
-# Building HYP-1
-
-This covers HYP-1 version 1.0.21. Every push to `main` builds a release on GitHub (see
-[Releases on GitHub](#releases-on-github)); building locally is only needed to work on the firmware.
+# Building SLOOP
 
 The build makes three files in `build/`:
 
 | File | What |
 | --- | --- |
-| `amb.bin` | the firmware app |
+| `felucca.bin` | the firmware app |
 | `loader/ota.bin` | the update loader |
-| `amb.fwsc` | the installable package (app + loader) |
+| `felucca.fwsc` | the installable package (app + loader) |
+
+## Windows (WSL)
+
+`INSTALL-SLOOP.bat` builds in a WSL distribution and opens the installer on
+`http://localhost:8766/webapp/installer/`. It needs Python 3 with Pillow on Windows, a WSL
+distribution with the JieLi toolchain, and the three SDK files (below) in `build/deps/ac79`.
+Set `SLOOP_WSL_DISTRO` (default `Ubuntu`) and `SLOOP_TOOLCHAIN` (a Linux path, default
+`/root/.jieli/toolchain`) if yours differ.
 
 ## Prerequisites (macOS)
 
@@ -44,18 +49,25 @@ On Linux x86-64 the toolchain runs natively and Docker is not needed.
 `JIELI_TOOLCHAIN` and `AC79_SDK` override the default locations
 (`~/.jieli/toolchain`, `~/fw-AC79_AIoT_SDK`).
 
-`./build.sh --release 1.0.21` makes a release build; the package is `build/amb-1.0.21.fwsc` (the site
-publishes it as `hyp1-1.0.21.fwsc`).
+`./build.sh --release 0.9-beta` makes a release build: the package identity becomes
+`FM-1_909` and the version string `0.9-BETA`; the package is `build/felucca-0.9-beta.fwsc`.
 
-On macOS with podman instead of Docker, put a `docker` script that runs `exec podman "$@"` first
-on your PATH. `EN_JOBS` (default 4) limits parallel compiles: a podman machine drops
-connections when many containers start at once.
+Build options (environment, `0` or `1`; defaults in `firmware/src/felucca.c`):
 
-Build option: `EN_CDC=1` adds Felucca's USB serial function (off by default: one plain
-MIDI interface).
+| Flag | Default | |
+| --- | --- | --- |
+| `FELUCCA_FLASH` | 1 | settings, presets and projects in flash |
+| `FELUCCA_OTA` | 1 | update entry (needs `FELUCCA_FLASH`) |
+| `FELUCCA_CDC` | 1 | USB serial console |
+| `FELUCCA_UAC` | 1 | USB audio input: the master output, 44.1 kHz stereo (after Felucca 1.0) |
+| `FELUCCA_UART` | 1 | TRS MIDI IN (the 3.5 mm jack) |
 
-The build also generates `build/gen/` (the font). It fails if a soft-double routine is linked
-(a `double` crept in) and checks the image, RAM and pool sizes.
+## Samples
+
+The CC0 instrument samples that the SAMPLE engine uses are in `assets/samples-cc0/`
+(Versilian Studios, see `ATTRIBUTION.txt` there). `tools/fetch_cc0.py` downloads them
+again from the source repositories. Without that folder the build still works and the
+SAMPLE engine has only the generated drum kit.
 
 ## Tests
 
@@ -63,64 +75,66 @@ The build also generates `build/gen/` (the font). It fails if a soft-double rout
 tests/run_tests.sh
 ```
 
-Runs, on the build machine: the maths library against libm; the instrument (`tests/host/amb_test.c`:
-Euclidean patterns, scales and chords, voice leading, the render's levels, drift, evolving loops, freeze); flash
-storage; Felucca's update-path tests against `build/amb.fwsc`; and the whole app in the simulator
-(`tests/scenarios/*.amb`), with its screenshots and audio in `build/scenarios/`.
+Runs the host tests (flash storage, user presets, MIDI parser, update entry, update
+loader, a DSP render, the 4-track mix, project formats, the SLICER, the regression suite,
+the command-line installer) and, with Node.js, the web page tests. Run it after `./build.sh`
+(it uses `build/` and needs `AC79_SDK` set as for the build).
 
-`host/build_host.sh` builds the simulator alone; `build/host/amb_host SCRIPT OUTDIR` runs one
-script (the command list is at the top of `host/amb_host.c`).
+The regression suite (`tests/regress.c`) renders every engine and preset and compares a
+hash of each render with `tests/golden.txt`; it also checks levels, voices and the CPU
+cost (`tests/cpu_baseline.txt`, `tests/target_budget.txt`). The host CPU cost is relative
+to the idle + drums mix, counted by the kernel on macOS and under callgrind on Linux when
+valgrind is installed (exact, about 45 s more); without either it is timed, a rough check.
+After an intended change of the sound, `GOLDEN_UPDATE=1 sh tests/run_tests.sh` rewrites
+the hashes; `BUDGET_UPDATE=1` does the same for the cost files.
+
+## Browser audio preview
+
+The browser preview uses the firmware's DSP and sequencer with RAM-backed user samples.
+It requires Python 3, a host C compiler, Node.js for tests, and Emscripten (`brew install emscripten` on macOS).
+It does not need the JieLi toolchain, AC79 SDK, Docker, or an FM-1.
+
+```sh
+python3 tools/build_preview.py
+tests/run_preview_tests.sh
+```
+
+The build produces `build/preview/sloop-preview.wasm`. The tests compare all twelve engines sample by sample
+against the same adapter compiled for the host and verify sequencing, live mixer changes, stop, and user samples.
+`web/make_site.py` includes the preview and caches it for the site app when the WASM build is present:
+
+```sh
+# Use a release package downloaded from isod89/sloop-fm1, or your own firmware build.
+python3 web/make_site.py build/releases/sloop-2.6.fwsc 2.6 build/site
+python3 -m http.server 8766 --bind 127.0.0.1 --directory build/site
+```
+
+Open `http://localhost:8766/webapp/editor/?mock=1`, **Connect**, then **Play loop** to hear all four tracks.
+**Show preview** opens the piano/pads, volume and editable sequence; **Hide preview** folds them while
+playback continues. The piano keys and labeled computer keys audition the selected track.
+The audio controls are available only in simulated mode. The physical-device editor continues to use Web MIDI.
+The standalone downloaded HTML editor does not include the WASM asset.
 
 ## Install
+
+On Windows, `INSTALL-SLOOP.bat` builds and opens the web installer (Chrome or Edge). The
+`.fwsc` of each release is on the GitHub releases page.
 
 From the command line (needs `pip3 install mido python-rtmidi`):
 
 ```
-python3 tools/fm1_install.py build/amb.fwsc
+python3 tools/fm1_install.py build/felucca.fwsc
 python3 tools/fm1_install.py --info          # identity of the connected FM-1
 ```
 
-Installing firmware is at your own risk. Hold OCT− and OCT+ for 5 seconds for Felucca's update
-mode. If the FM-1 no longer starts but reaches the chip's update mode (4C4A:8057 on USB),
-`tools/fm1_rescue.sh` puts stock firmware back from a Mac; otherwise recovery needs
-[FM-1-transporter](https://github.com/kurogedelic/FM-1-transporter).
-
-## Releases on GitHub
-
-Every push to `main` runs `.github/workflows/firmware.yml`:
-
-1. It fetches JieLi's toolchain and the AC79 SDK (cached between runs, with retries).
-2. It builds a release numbered from the workflow's run number N: `1.0.N` up to run 32, then `1.5.0`
-   at run 33 and up from there (`1.5.(N - 33)`, a new minor version every hundred), so each push is a new
-   version (the FM-1 reports it as FM-1_7XXYYZZ, which the installer checks).
-3. It runs the tests, and fails the build on a size, pool or soft-double problem (shown as
-   annotations on the run).
-4. It builds the site with `tools/make_pages.py` (landing page, manual, PDF manual, browser emulator,
-   web installer, the board, firmware download) and deploys it to GitHub Pages at
-   <https://rustypawz.github.io/fm1-HYP1/>. The firmware is also kept as the run's artifact.
-
-The board (`web/board.html`) shows the repository's GitHub Discussions with [giscus](https://giscus.app):
-the workflow looks up the Discussions categories each build (`board/config.json`), so it switches itself
-on once Discussions is enabled (Settings > General > Features) and the giscus app is installed on the
-repository. Feature requests go in the **Ideas** category, comments in **General**; moderate them in
-Discussions.
-
-The manual's source is `docs/MANUAL.md` (`tools/manual_html.py` turns it into the page; the site
-stamps the build's version into it). The PDF manual, `docs/HYP-1_Manual.pdf`, is built separately and
-committed.
-
-## The site's pictures and videos
-
-All made from the firmware itself, run in the simulator:
+Or, to install your own build from the web installer, make a local copy of the site and open it from `localhost`
+(Web MIDI needs a secure context):
 
 ```
-host/build_host.sh
-build/host/amb_host tools/site/shots.amb build/site_shots      # the screens
-python3 tools/site/mockups.py                                  # docs/img: the device, screens, themes
-python3 tools/site/panda.py                                    # the red panda mark and favicon
-python3 tools/site/video.py [--vertical]                       # the tour; --seq, --voices, --links,
-                                                               # --song for the other videos
+python3 web/make_site.py build/felucca.fwsc dev /tmp/felucca-site
+cd /tmp/felucca-site && python3 -m http.server 8000
+# open http://localhost:8000/webapp/installer/
 ```
 
-`tools/publish_pages.sh` (pushing a site to a `gh-pages` branch by hand) is AMB-1's older route and
-isn't needed with the workflow.
+Installing firmware is at your own risk. If an install fails and the FM-1 no longer
+starts, recovery needs [FM-1-transporter](https://github.com/kurogedelic/FM-1-transporter).
