@@ -94,6 +94,71 @@ static int key_note(uint32_t k)
     for (f = 0; f < 30; f++) ui_frame();
     return n;
 }
+/* (MENTAL) a machine straight out of the box must make a sound on every track with nothing loaded:
+ * each default sound played alone, its peak measured. A default that reads an empty user sample slot
+ * would be silent here, which is exactly the mistake this guards against. */
+static int32_t mix_peak(uint32_t blocks)
+{
+    static int32_t o[CTL * 2];
+    int32_t pk = 0;
+    uint32_t b, i;
+    for (b = 0; b < blocks; b++) {
+        mix_block(o, CTL);
+        for (i = 0; i < CTL * 2u; i++) {
+            int32_t a = o[i] < 0 ? -o[i] : o[i];
+            if (a > pk)
+                pk = a;
+        }
+    }
+    return pk;
+}
+/* wait for the machine to go quiet, so one track's tail is never measured as the next one's sound */
+static int settle(void)
+{
+    uint32_t tries;
+    int32_t last = 0;
+    for (tries = 0; tries < 400u; tries++) {
+        last = mix_peak(40u);
+        if (last < 60)
+            return 1;
+    }
+    printf("boot_sound:   (settle gave up at peak %d)\n", (int)last);
+    return 0;
+}
+static int32_t part_peak(uint32_t k, uint32_t note)
+{
+    int32_t pk;
+    uint32_t j;
+    for (j = 0; j < NTRK; j++)
+        panic_req |= (uint8_t)(1u << j);
+    if (!settle()) {
+        printf("boot_sound: the mix never went quiet before track %u\n", k + 1);
+        return -1;
+    }
+    trk_note_on(&trk[k], note, 110);
+    pk = mix_peak(1400u);
+    trk_note_off(&trk[k], note);
+    return pk;
+}
+static void defaults_sound(void)
+{
+    uint32_t k;
+    for (k = 0; k < NPART; k++) {
+        const engine_t *e = ENGINES[trk[k].eng_req % NENGINES];
+        int32_t pk = part_peak(k, 48);
+        char b[140];
+        snprintf(b, sizeof b, "out of the box: track %u (%s %s) makes a sound with nothing loaded (peak %d)",
+                 k + 1, e->name, e->presets[trk[k].preset % e->npresets].name, (int)pk);
+        check(pk > 500, b);
+    }
+    {
+        int32_t pk = part_peak(TRK_DRUM, 36);
+        char b[120];
+        snprintf(b, sizeof b, "out of the box: the drum track's kick sounds (peak %d)", (int)pk);
+        check(pk > 500, b);
+    }
+}
+
 static void key_check(const char *when)
 {
     uint32_t k;
@@ -118,6 +183,7 @@ int main(void)
     boot_as_main();
     boot_as_main();
     key_check("first power-on");
+    defaults_sound();
     for (i = 0; i < 400; i++) ui_frame();         /* (an autosave) */
     persist_flush_now();
     boot_as_main();                               /* 2. an update: the flash as it was */
