@@ -159,7 +159,7 @@ static const preset_t ANALOG_PRESETS[] = {
     /* MENTAL: the acid of mental tekno. MNT ACID is a 303 pushed harder than ACID 303 (more resonance,
      * drive and filter envelope) into the delay; MNT SCREECH is its high, biting voice; MNT SUB is the
      * long sine bass that sits under a kick, two octaves down and gliding */
-    {"MNT ACID", {0, 0, 0, 0, 24, 124, 86, 72}, {0, 48, 18, 24}, 74, 1, FX(52, 0, 34, 16),
+    {"MNT ACID", {0, 0, 0, 0, 24, 124, 86, 72}, {0, 48, 18, 24}, 63, 1, FX(52, 0, 34, 16),
      XP(P_GLIDE + 1, 38, P_GLMODE + 1, 1, P_TRANS + 1, -12)},
     {"MNT SCREECH", {1, 0, 0, 0, 92, 120, 104, 80}, {0, 44, 14, 30}, 46, 1, FX(70, 0, 44, 30),
      XP(P_GLIDE + 1, 46, P_GLMODE + 1, 1)},

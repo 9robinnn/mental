@@ -101,7 +101,7 @@ static const param_desc_t TP[P_COUNT] = {
     [P_AHOLD] = PE("HOLD", N_ONOFF, 0),
     [P_AORDER] = PE("ORD", N_ORDER, 0),
     [P_ROOT] = PD("ROOT", F_NOTE, 0, 11, 0),
-    [P_SCALE] = PE("SCL", N_SCALE, 0),
+    [P_SCALE] = PE("SCL", N_SCALE, 8),   /* MENTAL: PHRY, the phrygian colour of the style */
     [P_QUANT] = PE("QNT", N_QUANT, 0),
     [P_TRANS] = PD("TRN", F_SEMI, -24, 24, 0),
     [P_SLEN] = PD("LEN", F_STEPS, 1, NSTEP, 16),
@@ -154,7 +154,7 @@ static void preset_extras(int16_t *p, const preset_t *pr)
 
 
 static const param_desc_t GP[G_COUNT] = {
-    [G_BPM] = PD("BPM", F_BPM, 40, 240, 90),
+    [G_BPM] = PD("BPM", F_BPM, 40, 240, 170),   /* MENTAL: mental tekno sits at 170 .. 190 */
     [G_SWING] = PD("SWING", F_SWING, 0, 100, 0),
     [G_CLOCK] = PE("CLICK", N_CLICK, 0),            /* (the old CLK slot: projects keep their format) */
     [G_TUNE] = PD("TUNE", F_INT, -50, 50, 0),
