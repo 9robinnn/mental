@@ -301,19 +301,19 @@ UI_SMALL static void studio_tracks_draw(void)
             cv_rect(198, 23, (int32_t)level * 38 / 127, 5, selected ? col : TE_G3);
         cv_blit(0, 40 + i * 36);
     }
-    {   /* (MENTAL) the home screen is the mixer: KNOB 1 swing, 2 level, 3 the track's cutoff, 4 cut it / bring it
-         * back - the two live moves with no page to find */
+    {   /* (MENTAL) the home screen is the mixer: KNOB 1 the DJ filter on the master, 2 level, 3 the track's
+         * cutoff, 4 cut it / bring it back - every live move with no page to find */
         track_t *t = TSEL;
         static char v[4][8];
-        static const char *const lab[4] = {"swing", "level", "cutoff", "track"};
+        static const char *const lab[4] = {"master", "level", "cutoff", "track"};
         const char *val[4] = {v[0], v[1], v[2], v[3]};
         int32_t ratio[4];
         uint32_t lvl = is_drum(t) ? song.g[G_DRLVL] : t->p[P_LEVEL];
-        swing_str(v[0], song.g[G_SWING]);
+        fmt_int(v[0], song.g[G_FILT]);
         fmt_int(v[1], t->p[P_MUTE] ? 0 : (int32_t)lvl * 100 / 127);
         fmt_int(v[2], t->p[P_TFLT]);
         str_cpy(v[3], t->p[P_MUTE] ? "cut" : "on", sizeof v[3]);
-        ratio[0] = song.g[G_SWING] * 10;
+        ratio[0] = (song.g[G_FILT] + 64) * 1000 / 127;
         ratio[1] = t->p[P_MUTE] ? 0 : (int32_t)lvl * 1000 / 127;
         ratio[2] = (t->p[P_TFLT] + 64) * 1000 / 127;
         ratio[3] = t->p[P_MUTE] ? 0 : 1000;

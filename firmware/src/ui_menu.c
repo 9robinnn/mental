@@ -137,17 +137,18 @@ UI_SMALL static void draw_menu(void)
         cv_oy = pass ? -124 : 0;
         if (ui.menu == 3) {                         /* (MENTAL) the live cheat sheet: 8 px a character, 30 to a line */
             static const char *const HELP[][2] = {
-                {"HOME",     "K2 LVL K3 CUT K4 MUT"},
+                {"HOME",     "K1 MASTER K3 CUT FILT"},
                 {"GLO+HOME", "LOCK: 1 PRESS = MUTE"},
                 {"ALGO",     "TRACK, PRESETS SOUND"},
                 {"FX",       "HOLD: 27 PUNCH FX"},
                 {"ENV",      "HOLD: STEP JUMP"},
                 {"GLO",      "HOLD: MUTE SOLO LVL"},
-                {"SEQ",      "HOLD: THE 16 STEPS"},
+                {"SEQ",      "HOLD: STEPS, K2 DIV"},
                 {"EDIT",     "HOLD: ERASE LIVE"},
                 {"ARP",      "HOLD: NOTE REPEAT"},
                 {"SAVE",     "HOLD: A-D SECTIONS"},
                 {"SEL+OCT",  "PATTERN +-1 OCTAVE"},
+                {"LFO",      "HOLD: RESET, 16=ALL"},
                 {"SEL",      "HOLD: KEY SCL CHORD"},
                 {"REC",      "HOLD: CLEAR TRACK"},
                 {"EDIT+OCT", "UNDO / REDO"},
@@ -155,7 +156,7 @@ UI_SMALL static void draw_menu(void)
             };
             uint32_t h;
             for (h = 0; h < sizeof HELP / sizeof HELP[0]; h++) {
-                int32_t y = 1 + (int32_t)h * 14;
+                int32_t y = 1 + (int32_t)h * 13;
                 cv_text(2, y, &FONT_S, HELP[h][0], C_HI);
                 cv_text(74, y, &FONT_S, HELP[h][1], C_AMB);
             }

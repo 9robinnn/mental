@@ -144,7 +144,7 @@ static uint32_t scale_mask(const track_t *t)
 }
 
 /* ---------------------------------------------------------- layers --- */
-enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_JUMP, LY_COUNT };
+enum { LY_PLAY, LY_FX, LY_ERASE, LY_ROLL, LY_STEP, LY_SCALE, LY_MIX, LY_SONG, LY_JUMP, LY_RESET, LY_COUNT };
 static uint32_t ly_bit[LY_COUNT];        /* the button (fm1_in.buttons bit) of each layer: the UI sets them */
 static uint32_t dyn_bit[2];              /* OCT- / OCT+: ghost / hard on the drum track */
 /* (MENTAL) STEP JUMP, as the Electribe and the volcas have it: hold ENV and press steps, and every track
@@ -2215,6 +2215,11 @@ static void key_down(uint32_t k)
         }
         return;
     }
+    case LY_RESET:                                    /* (MENTAL) back to neutral: the UI does it (ui_layers.c) */
+        kb_kind[k] = KS_UI;
+        kb_nt[k][0] = (uint8_t)layer;
+        lk_push(layer, k, 1);
+        return;
     case LY_JUMP:                                     /* (MENTAL) STEP JUMP: the held steps are what plays */
         if (k < 16u) {
             if (!jump_mask)

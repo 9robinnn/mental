@@ -1186,6 +1186,32 @@ int main(int argc, char **argv)
         lights_keys = KEYS_OFF; lights_notes = 0; lights_lvl = LIGHTS_OFF;
         go_home(); ui.force = 1; frame();
     }
+    {   /* (MENTAL) RESET: LFO held, keys 1-4 put a track back to neutral, key 16 the whole machine.
+         * It must touch what a performance moved and nothing else: not the pattern, not the mix. */
+        step_t kept[NSTEP];
+        int16_t lvl0;
+        go_home(); ui.force = 1; frame();
+        tap(B_LFO);
+        check(cur_fam() == FAM_LFO, "RESET: LFO tapped still opens the LFO pages");
+        go_home(); ui.force = 1; frame();
+        trk[0].p[P_TFLT] = 40; trk[0].p[P_MUTE] = 1; seq_trans_set(0, 12);
+        trk[1].p[P_TFLT] = -30;
+        song.g[G_FILT] = 55; song.solo = 2u;
+        trk[0].step[0].time = ST_NOTE; trk[0].step[0].n = 1; trk[0].step[0].note[0] = 50;
+        memcpy(kept, trk[0].step, sizeof kept);
+        lvl0 = trk[0].p[P_LEVEL];
+        press(B_LFO); frame();
+        key(0);                                          /* key 1: track 1 only */
+        check(!trk[0].p[P_TFLT] && !trk[0].p[P_MUTE] && !seq_trans[0], "RESET: key 1 puts track 1 back to neutral");
+        check(trk[1].p[P_TFLT] == -30 && song.g[G_FILT] == 55, "RESET: ... and leaves the other track and the master alone");
+        check(trk[0].p[P_LEVEL] == lvl0 && !memcmp(kept, trk[0].step, sizeof kept),
+              "RESET: ... and never the mix nor the pattern");
+        key(26);                                         /* the 16th white key: everything */
+        check(!trk[1].p[P_TFLT] && !song.g[G_FILT] && !song.solo, "RESET: key 16 clears every track, the master filter and solo");
+        check(!memcmp(kept, trk[0].step, sizeof kept), "RESET ALL: the patterns are still there");
+        release(B_LFO); frames(2);
+        go_home(); ui.force = 1; frame();
+    }
 
     {   /* SELECT (2.4): the pages of the family shown; the tempo on HOME (TRACKS), in a layer, on REC */
         int16_t bpm;

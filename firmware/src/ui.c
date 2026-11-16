@@ -1007,6 +1007,34 @@ UI_SMALL static void pc_poll(void)
         ui.force = 1;
     }
 }
+/* (MENTAL) a sound that reads a user sample slot is silent while that slot is empty, and silence looks
+ * like a broken machine. Say which slot it wants, when the person picks it. */
+UI_SMALL static void warn_empty_slot(const track_t *t)
+{
+    char m[20];
+    uint32_t k;
+    if (is_drum(t)) {
+        uint32_t kit = (uint32_t)clamp(t->p[P_E0], 0, (int32_t)DRUM_KITS - 1);
+        if (kit < DRUM_USR || kit >= DRUM_PAIR)
+            return;                                      /* a built-in kit: it has its own sounds */
+        k = kit - DRUM_USR;
+    } else {
+        uint32_t set;
+        if (ENGINES[t->eng_req % NENGINES] != &ENG_SAMPLE)
+            return;
+        set = (uint32_t)clamp(t->p[P_E0], 0, (int32_t)SMP_NALL - 1);
+        if (set < SMP_NSETS)
+            return;                                      /* a factory set: always there */
+        k = set - SMP_NSETS;
+    }
+    if (k < SMP_USER_SLOTS && !usr_nz[k]) {
+        str_cpy(m, "USR", 4);
+        fmt_int(m + str_len(m), (int32_t)k + 1);
+        str_cpy(m + str_len(m), " IS EMPTY", 10);
+        ui_message(m);
+    }
+}
+
 UI_SMALL static void preset_go(uint32_t n)                    /* load list index n into the selected track */
 {
     uint32_t k, e = preset_at(n, &k), b[FAV_N];
@@ -1020,6 +1048,7 @@ UI_SMALL static void preset_go(uint32_t n)                    /* load list index
     if (e != TSEL->eng_req)
         select_engine(e);
     apply_preset(k);
+    warn_empty_slot(TSEL);                           /* (MENTAL) a sound pointing at an empty slot: say so */
     ui.force = 1;
 }
 

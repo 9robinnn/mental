@@ -294,9 +294,11 @@ UI_SMALL static void tracks_edit(uint32_t slot, int32_t steps)
     int16_t *vp;
     const param_desc_t *d;
     switch (slot) {
-    case 0:
-        vp = &song.g[G_SWING];
-        d = &GP[G_SWING];
+    case 0:                                          /* (MENTAL) the DJ filter on the whole mix: the live sweep, from
+                                                      * the home screen (SWING is in GLO > GLOBAL, and per track in
+                                                      * SEQ > PATTERN, where it belongs) */
+        vp = &song.g[G_FILT];
+        d = &GP[G_FILT];
         break;
     case 1:
         if (t->p[P_MUTE]) {
@@ -788,6 +790,9 @@ UI_SMALL static void layer_tap(uint32_t layer)
     case LY_JUMP:                                         /* (MENTAL) ENV is the STEP JUMP layer held; tapped it is still ENV */
         open_family(FAM_ENV);
         break;
+    case LY_RESET:                                        /* (MENTAL) LFO is the RESET layer held; tapped it is still LFO */
+        open_family(FAM_LFO);
+        break;
     case LY_ERASE:
     case LY_STEP:
         if (on_drum_page()) {                             /* DRUMS: GRID -> KIT -> SOUND (2.7) */
@@ -1173,7 +1178,7 @@ UI_SMALL static void ui_input(void)
         home_eat = 0;
     }
     pressed &= ~(ly_bit[LY_FX] | ly_bit[LY_ERASE] | ly_bit[LY_ROLL] | ly_bit[LY_STEP] | ly_bit[LY_SCALE] | ly_bit[LY_MIX] |
-                 ly_bit[LY_SONG] | ly_bit[LY_JUMP]);
+                 ly_bit[LY_SONG] | ly_bit[LY_JUMP] | ly_bit[LY_RESET]);
     holds_input(pressed, fm1_ms);
     pressed &= ~((on_song_page() ? 0u : 1u << panel.btn[B_REC]) | (1u << panel.btn[B_SAVE]));
     if (layered || ui.hold_kind) {                      /* a layer / a hold: the rest waits */
@@ -1298,8 +1303,10 @@ UI_SMALL static void ui_input(void)
          * page and TRACKS only (the drum track: its kits); elsewhere a stray turn would throw away the sound
          * being edited. Every detent counts */
         uint32_t total, cur = preset_pos(&total);
-        if (is_drum(TSEL))
+        if (is_drum(TSEL)) {
             TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
+            warn_empty_slot(TDRUM);                  /* (MENTAL) KIT = a user slot with nothing in it */
+        }
         else if (total)
             preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
     }

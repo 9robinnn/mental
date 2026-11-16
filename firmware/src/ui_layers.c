@@ -21,8 +21,8 @@
  * The keys' part runs in the audio ISR (seq.c layer_now: no lag, no lost press); the SEQ, SEL and
  * GLO keys come to the UI through seq.c lk_q. HOLD: REC held clears the track, SAVE held saves the
  * project (a ring fills; let go before and nothing happens). */
-static const uint8_t LAYER_BTN[LY_COUNT] = {NB, B_FX, B_EDIT, B_ARP, B_SEQ, B_SCL, B_GLO, B_SAVE, B_ENV};
-static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song", "jump"};
+static const uint8_t LAYER_BTN[LY_COUNT] = {NB, B_FX, B_EDIT, B_ARP, B_SEQ, B_SCL, B_GLO, B_SAVE, B_ENV, B_LFO};
+static const char *const LAYER_NAME[LY_COUNT] = {"", "punch", "erase", "roll", "steps", "key", "mix", "song", "jump", "reset"};
 static void section_store(uint32_t s);                  /* project.c */
 static void section_load(uint32_t s);
 static uint8_t sec_armed;                               /* store over a used section: the key again within 3 s */
@@ -326,6 +326,28 @@ UI_SMALL static void tap_tempo(void)
     }
 }
 
+/* (MENTAL) back to neutral. Only what a performance moves - the filter you swept, the octave you
+ * jumped, the track you cut. Never the pattern, never the mix the person built, never the sound. */
+UI_SMALL static void reset_track(uint32_t i)
+{
+    track_t *t = &trk[i % NTRK];
+    t->p[P_TFLT] = 0;                                   /* the track's filter, wide open */
+    t->p[P_MUTE] = 0;                                   /* and it comes back */
+    seq_trans_set(i % NTRK, 0);                         /* the pattern at its written octave */
+}
+UI_SMALL static void reset_all(void)
+{
+    uint32_t i;
+    for (i = 0; i < NTRK; i++)
+        reset_track(i);
+    song.solo = 0;
+    song.g[G_FILT] = 0;                                 /* the DJ filter on the master */
+    punch.req = -1;                                     /* whatever punch-in effect was latched */
+    jump_mask = 0;                                      /* and the step jump */
+    drum_mute = 0;                                      /* the drum lanes muted by EDIT + a black key */
+    ui.force = 1;
+}
+
 /* a key of the layers the UI runs (seq.c lk_q): SEQ steps, SEL key, GLO mix */
 UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
 {
@@ -339,6 +361,22 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
                 step_up((uint32_t)w);
             if (layer == LY_MIX && w == 8)
                 fill_held = 0;                              /* GLO + key 9 let go: the fill ends */
+        }
+        return;
+    }
+    if (layer == LY_RESET) {                            /* (MENTAL) keys 1-4 a track, key 16 the whole machine */
+        int32_t w = punch_key(k);
+        char m[16];
+        if (w < 0)
+            return;
+        if (w == 15) {
+            reset_all();
+            ui_message("RESET ALL");
+        } else if (w < (int32_t)NTRK) {
+            reset_track((uint32_t)w);
+            str_cpy(m, "RESET TRACK ", sizeof m);
+            fmt_int(m + str_len(m), w + 1);
+            ui_message(m);
         }
         return;
     }
@@ -960,6 +998,28 @@ UI_SMALL static void layer_screen_draw(void)
         ratio[1] = trk[0].p[P_SCALE] * 1000 / (NSCALES - 1);
         ratio[2] = t->p[P_QUANT] * 500;
         ratio[3] = (t->p[P_TRANS] + 24) * 1000 / 48;
+        break;
+    }
+    case LY_RESET: {                                    /* (MENTAL) back to neutral: a track, or everything */
+        col = C_WHITE;
+        str_cpy(sub, "1-4 a track    16 everything", sizeof sub);
+        for (i = 0; i < 16u; i++) {
+            if (i < NTRK) {
+                const track_t *rt = &trk[i];
+                int moved = rt->p[P_TFLT] != 0 || rt->p[P_MUTE] != 0 || seq_trans[i] != 0;
+                str_cpy(tl[i].lab, "trk 1", 8);
+                tl[i].lab[4] = (char)('1' + i);
+                tl[i].bg = moved ? TE_COL[i] : TE_G1;
+                tl[i].fg = moved ? C_BLACK : TE_G3;
+            } else if (i == 15u) {
+                str_cpy(tl[i].lab, "ALL", 8);
+                tl[i].bg = C_WHITE;
+                tl[i].fg = C_BLACK;
+            } else {
+                tl[i].bg = TE_G1;
+                tl[i].fg = TE_G3;
+            }
+        }
         break;
     }
     case LY_JUMP: {                                     /* (MENTAL) STEP JUMP: hold the steps that play */
