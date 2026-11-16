@@ -63,6 +63,7 @@ jobs:
             echo "::error title=build failed::$(tail -60 build.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
             exit 1
           }
+          cp "build/felucca-$V.fwsc" build/felucca.fwsc   # the test runner looks for this name
           ls -la build/*.fwsc
       - name: Tests
         run: |
