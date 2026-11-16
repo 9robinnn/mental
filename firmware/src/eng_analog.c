@@ -156,6 +156,15 @@ static const preset_t ANALOG_PRESETS[] = {
      XP(P_LD_PIT + 1, 1, P_LRATE + 1, 80, P_LFADE + 1, 60, P_GLIDE + 1, 30)},
     {"SAW BASS", {0, 6, 64, 0, 52, 30, 40, 64}, {0, 60, 60, 20}, 30, 1, FX(8, 0, 0, 4), XP(P_TRANS + 1, -24)},
     {"SINE PAD", {3, 10, 64, 4, 90, 0, 0, 32}, {80, 90, 118, 90}, 0, 0, FX(0, 60, 20, 65)},
+    /* MENTAL: the acid of mental tekno. MNT ACID is a 303 pushed harder than ACID 303 (more resonance,
+     * drive and filter envelope) into the delay; MNT SCREECH is its high, biting voice; MNT SUB is the
+     * long sine bass that sits under a kick, two octaves down and gliding */
+    {"MNT ACID", {0, 0, 0, 0, 24, 124, 86, 72}, {0, 48, 18, 24}, 74, 1, FX(52, 0, 34, 16),
+     XP(P_GLIDE + 1, 38, P_GLMODE + 1, 1, P_TRANS + 1, -12)},
+    {"MNT SCREECH", {1, 0, 0, 0, 92, 120, 104, 80}, {0, 44, 14, 30}, 46, 1, FX(70, 0, 44, 30),
+     XP(P_GLIDE + 1, 46, P_GLMODE + 1, 1)},
+    {"MNT SUB", {3, 0, 0, 0, 127, 0, 26, 0}, {0, 120, 96, 70}, 0, 1, FX(12, 0, 0, 0),
+     XP(P_GLIDE + 1, 64, P_GLMODE + 1, 1, P_TRANS + 1, -24)},
 };
 
 /* (after Clipper 1.2) UNISON (voice.c unison_spread): both oscillators moved by r (Q32) of a turn of the note,

@@ -447,6 +447,11 @@ static const preset_t GRAIN_PRESETS[] = {
     {"DRONE", {3, 50, 115, 80, -12, 20, 20, 50}, {90, 100, 127, 100}, 0, 0, FX(0, 30, 15, 70)},
     {"PNO FREEZE", {0, 40, 127, 127, 0, 5, 0, 100}, {80, 100, 127, 100}, 0, 0, FX(0, 30, 20, 75)},
     {"HORN CLOUD", {3, 30, 100, 90, 0, 30, 15, 90}, {70, 100, 120, 95}, 0, 0, FX(0, 40, 20, 70)},
+    /* MENTAL: the drones under a mental track. ABYSS is two octaves down, slow and dark; RITUAL keeps
+     * its grains sparse and wide, so it breathes; VOID is almost still, for an intro or a breakdown */
+    {"MNT ABYSS", {3, 55, 120, 85, -24, 25, 18, 30}, {100, 110, 127, 115}, 0, 0, FX(0, 25, 20, 95)},
+    {"MNT RITUAL", {4, 35, 110, 55, -12, 60, 40, 45}, {110, 100, 127, 120}, 0, 0, FX(0, 40, 35, 110)},
+    {"MNT VOID", {5, 60, 127, 40, -12, 15, 8, 25}, {127, 110, 127, 127}, 0, 0, FX(0, 20, 25, 120)},
 };
 
 static const engine_t ENG_GRAIN = {

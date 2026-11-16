@@ -270,6 +270,11 @@ static const preset_t NOISE_PRESETS[] = {
     {"NZ SNARE", {NZ_ANLG, 20, 90, 30, 64, 0, 0, 0}, {0, 60, 0, 44}, 0, 0, FX(0, 0, 0, 25)},
     {"BITCRUSH", {NZ_ANLG, 40, 90, 40, 64, 0, 0, 100}, {0, 70, 110, 40}, 0, 0, FX(0, 0, 20, 30)},
     {"RADIO", {NZ_LFSR, 20, 70, 90, 64, 0, 60, 48}, {10, 70, 120, 50}, 0, 0, FX(0, 10, 30, 40)},
+    /* MENTAL: the resonant screams of mental tekno. SCREAM rings a narrow filter with noise and tracks
+     * the key; CAVERN is the same far away, a long tail; GRIND is a slow drift against the pitch */
+    {"MNT SCREAM", {NZ_ANLG, 112, 72, 127, 127, 0, 10, 0}, {6, 80, 120, 70}, 0, 0, FX(16, 10, 40, 60)},
+    {"MNT CAVERN", {NZ_ANLG, 40, 62, 120, 100, 0, 30, 0}, {70, 100, 127, 110}, 0, 0, FX(0, 20, 45, 110)},
+    {"MNT GRIND", {NZ_META, 20, 84, 110, 90, 48, 90, 20}, {20, 90, 120, 80}, 0, 0, FX(0, 0, 35, 70)},
 };
 
 /* (after Clipper 1.2) UNISON (voice.c unison_spread): the phase moved by r (Q32) and the noise from its own
