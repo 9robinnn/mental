@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# MENTAL: builds the firmware with JieLi's toolchain on GitHub's Linux runner, runs the host tests,
+# and keeps the installable package (.fwsc) as a downloadable artifact of the run.
+# Adapted from HYP-1's workflow (RustyPawz/fm1-HYP1), without the public site: this repository is private.
+name: firmware
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: firmware-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Tools
+        run: pip install Pillow
+      - name: JieLi toolchain and SDK (cached)
+        id: jl
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.jieli
+            ~/fw-AC79_AIoT_SDK
+          key: jieli-ac79-v1.2.1
+      - name: Fetch them if not cached
+        if: steps.jl.outputs.cache-hit != 'true'
+        run: |
+          try() { for i in 1 2 3 4; do "$@" && return 0; echo "retry $i: $*"; sleep $((i * 15)); done; return 1; }
+          [ -x ~/.jieli/toolchain/pi32v2/bin/clang ] || try tools/get_toolchain.sh
+          fetch_sdk() {
+            rm -rf ~/fw-AC79_AIoT_SDK
+            git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
+              https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK
+          }
+          [ -f ~/fw-AC79_AIoT_SDK/cpu/wl82/tools/uboot.boot ] || try fetch_sdk
+      - name: Keep them for next time
+        if: steps.jl.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.jieli
+            ~/fw-AC79_AIoT_SDK
+          key: jieli-ac79-v1.2.1
+      - name: Version
+        run: echo "V=0.$((GITHUB_RUN_NUMBER / 100 % 100)).$((GITHUB_RUN_NUMBER % 100))" >> "$GITHUB_ENV"
+      - name: Build the firmware
+        run: |
+          set -o pipefail
+          ./build.sh --release "$V" 2>&1 | tee build.log || {
+            echo "::error title=build failed::$(tail -60 build.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          }
+          grep -E "^\s+ok\s" build.log | sed 's/^\s*ok\s*/::notice title=check::/' || true
+          ls -la build/*.fwsc
+      - name: Tests
+        run: |
+          set -o pipefail
+          export AC79_SDK="$HOME/fw-AC79_AIoT_SDK"
+          tests/run_tests.sh 2>&1 | tee tests.log || {
+            echo "::error title=tests failed::$(grep -A12 FAIL tests.log | head -60 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mental-firmware-${{ env.V }}
+          path: build/amb-${{ env.V }}.fwsc
