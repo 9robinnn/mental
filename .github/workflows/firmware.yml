@@ -59,7 +59,7 @@ jobs:
       - name: Build the firmware
         run: |
           set -o pipefail
-          ./build.sh --release "$V" 2>&1 | tee build.log || {
+          sh build.sh --release "$V" 2>&1 | tee build.log || {
             echo "::error title=build failed::$(tail -60 build.log | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')"
             exit 1
           }
