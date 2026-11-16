@@ -150,10 +150,11 @@ UI_SMALL static void draw_menu(void)
                 {"SEL",      "HOLD: KEY SCL CHORD"},
                 {"REC",      "HOLD: CLEAR TRACK"},
                 {"EDIT+OCT", "UNDO / REDO"},
+                {"TEXTURE",  "IN GLO: 3 DRONES"},
             };
             uint32_t h;
             for (h = 0; h < sizeof HELP / sizeof HELP[0]; h++) {
-                int32_t y = 2 + (int32_t)h * 16;
+                int32_t y = 1 + (int32_t)h * 15;
                 cv_text(2, y, &FONT_S, HELP[h][0], C_HI);
                 cv_text(74, y, &FONT_S, HELP[h][1], C_AMB);
             }

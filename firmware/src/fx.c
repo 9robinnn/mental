@@ -942,7 +942,9 @@ static int32_t master_cur = -1;                        /* the volume knob, rampe
  *   ROOM   room tone: a low rumble and a little air
  * Its level: x * LEVEL^2 / 16384 into the mix (the sources at about 8000 rms: LEVEL 64 about -30 dBFS rms out, 127
  * about -18). Off (and faded out): nothing runs, the mix bit for bit as without */
-enum { TX_OFF, TX_VINYL, TX_TAPE, TX_RAIN, TX_WIND, TX_RADIO, TX_ROOM, TX_USR1, TX_N = TX_USR1 + 4 };
+enum { TX_OFF, TX_VINYL, TX_TAPE, TX_RAIN, TX_WIND, TX_RADIO, TX_ROOM, TX_USR1,
+       TX_DRONE = TX_USR1 + 4, TX_HORN, TX_SIREN, TX_N };   /* (MENTAL) three drones of its own, after the slots:
+                                                             * a bed that costs no track and no voice */
 static struct {
     int32_t rnd;                                        /* noise state (never 0) */
     int32_t g;                                          /* gain now (Q15 of the LEVEL target), ramped a block */
@@ -998,7 +1000,7 @@ static inline int32_t tx_usr_next(const smp_zone_t *z)
 static void texture_gen(uint32_t src, int32_t *l, int32_t *r, uint32_t n)
 {
     uint32_t i, k;
-    if (src >= TX_USR1) {
+    if (src >= TX_USR1 && src < TX_DRONE) {
         uint32_t s = src - TX_USR1;
         const smp_zone_t *z = usr_nz[s] ? &usr_zone[s][0] : 0;
         if (!z || !z->n) {
@@ -1117,6 +1119,41 @@ static void texture_gen(uint32_t src, int32_t *l, int32_t *r, uint32_t n)
                 (k ? r : l)[i] = (tx.b[k] >> 1) + (w >> 6);
             }
         break;
+    /* (MENTAL) the drones: two detuned ramps and a fifth through a wandering low-pass. a, b, c: the phases
+     * (Q32 as the oscillators elsewhere), t0: the cutoff walking, t1: its target, wz: the filter's state. */
+    case TX_DRONE:
+    case TX_HORN:
+    case TX_SIREN: {
+        static const uint32_t STEP[3][3] = {           /* ~41, 41.2 and 61.5 Hz (DRONE); HORN an octave over */
+            {3992977u, 4012440u, 5989466u},
+            {7985954u, 8004111u, 11978932u},
+            {5323970u, 5356300u, 7985954u},
+        };
+        uint32_t w = src - TX_DRONE;
+        int32_t cut = src == TX_HORN ? 62 << 8 : src == TX_SIREN ? 58 << 8 : 46 << 8;
+        if (!(noise32(&tx.rnd) & 63u))                 /* a new target now and then: the bed never sits still */
+            tx.t1 = cut + (int32_t)(noise32(&tx.rnd) & 0x1FFFu) - 4096;
+        tx.t0 += (tx.t1 - tx.t0) >> 9;
+        if (src == TX_SIREN) {                         /* the sweep: the whole thing rides up and down slowly */
+            tx.t2 += (int32_t)n;
+            if (tx.t2 > 220500)
+                tx.t2 -= 220500;                       /* (five seconds a turn) */
+        }
+        tsvf_coef(&tx.wc[0], tx.t0 >> 8 < 24 ? 24 : tx.t0 >> 8 > 110 ? 110 : tx.t0 >> 8, src == TX_HORN ? 105 : 95);
+        for (i = 0; i < n; i++) {
+            int32_t m = src == TX_SIREN ? 65536 + ((tx.t2 > 110250 ? 220500 - tx.t2 : tx.t2) >> 1) : 65536;
+            int32_t y;
+            tx.a[0] += (int32_t)(((uint64_t)STEP[w][0] * (uint32_t)m) >> 16);
+            tx.b[0] += (int32_t)(((uint64_t)STEP[w][1] * (uint32_t)m) >> 16);
+            tx.c[0] += (int32_t)(((uint64_t)STEP[w][2] * (uint32_t)m) >> 16);
+            y = ((tx.a[0] >> 17) + (tx.b[0] >> 17) + (tx.c[0] >> 18)) >> (src == TX_HORN ? 0 : src == TX_SIREN ? 1 : 2);
+            y = tsvf_lp(&tx.wc[0], y, &tx.wz[0][0], &tx.wz[0][1]);
+            tx.d[0] += (y - tx.d[0]) >> 6;             /* the two sides drift apart: width, no phasing */
+            l[i] = clamp(y, -32767, 32767);
+            r[i] = clamp(y - (tx.d[0] >> 2), -32767, 32767);
+        }
+        break;
+    }
     default:
         for (i = 0; i < n; i++)
             l[i] = r[i] = 0;
@@ -1129,7 +1166,9 @@ static void texture_mix(int32_t *l, int32_t *r, uint32_t n)
     static const uint8_t BARS[5] = {1, 2, 4, 8, 16};
     uint32_t src = (uint32_t)clamp(song.g[G_TXSRC], 0, TX_N - 1), i, bar;
     /* the sources to about 8000 rms (VINYL ~5000: its crackle peaks), Q8; the user slots as they are (/ 2) */
-    static const int16_t TX_SCALE[TX_USR1 + 1] = {0, 800, 301, 693, 1918, 149, 343, 256};
+    static const int16_t TX_SCALE[TX_N] = {0, 800, 301, 693, 1918, 149, 343,
+                                          256, 256, 256, 256,   /* USR1..USR4: as they are */
+                                          1425, 1768, 2553};    /* (MENTAL) DRONE, HORN, SIREN, levelled with the rest */
     int32_t lvl = clamp(song.g[G_TXLVL], 0, 127), on, g0, g1, mv, depth, u, lfo, k0, k1, sc;
     tsvf_t fc;
     if (song.playing && !tx.play)
@@ -1153,7 +1192,7 @@ static void texture_mix(int32_t *l, int32_t *r, uint32_t n)
     mv = 32767 - mulq15(u, 21000);                      /* the level breathing: down to ~36 % */
     k0 = 32767 - mulq15(u, 28000);                      /* the brightness: a one-pole closing */
     texture_gen(tx.src, tl, tr, n);
-    sc = TX_SCALE[tx.src < TX_USR1 ? tx.src : TX_USR1];
+    sc = TX_SCALE[tx.src < TX_N ? tx.src : 0u];
     for (i = 0; i < n; i++) {                           /* each source to its level, MOVE's colour (Q13: no overflow */
         tx.lpm[0] += ((((tl[i] * sc) >> 8) - tx.lpm[0]) >> 2) * (k0 >> 2) >> 11;   /* up to +-260000) */
         tx.lpm[1] += ((((tr[i] * sc) >> 8) - tx.lpm[1]) >> 2) * (k0 >> 2) >> 11;
