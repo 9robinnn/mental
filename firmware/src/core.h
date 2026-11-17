@@ -8,11 +8,11 @@
 #include <stdint.h>
 #define NVOICE 8                 /* voices per part, and the budget shared by all parts */
 #define NPOLY 8
-#define NPART 5                  /* synth parts: tracks 1..5 */
-#define NTRK 6                   /* + the drum track (6) */
+#define NPART 3                  /* synth parts: tracks 1..3 */
+#define NTRK 4                   /* + the drum track (4) */
 #define TRK_DRUM (NTRK - 1)       /* the drum track is always the last one */
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
-#define NSTEP 32
+#define NSTEP 64
 #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
 #ifndef FELUCCA_SLICE
 #define FELUCCA_SLICE 0          /* the SLICE engine (eng_slice.c): kept in the tree, not built by default */

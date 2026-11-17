@@ -131,8 +131,8 @@ int main(void)
                  P_CHORD + 1 == P_TFLT && P_TFLT + 1 == P_STRUM && P_STRUM + 1 == P_VLEAD && P_VLEAD + 1 == P_ITYPE &&
                  P_LPOL + 1 == P_E0 && P_E0 == 63 && P_COUNT == PROJ_NP_V5 + 10u && PROJ_NP_V5 == PROJ_NP_V4 + 3u &&
                  PROJ_NP_V4 == PROJ_NP_V3 + 1u && P_SLDEPTH + 1 == P_CHORD);
-    bad += check("format 7 fits one flash object (3572 of 3840 bytes: six tracks, 32-step patterns); 4 slots fit .noinit",
-                 sizeof(project_t) <= 3840u && 4u * sizeof(project_t) <= 0x3D50u - 256u && sizeof(project_t) == 3572u);
+    bad += check("format 7 fits one flash object (3816 of 3840 bytes); 4 slots fit .noinit (with panel, settings, dbg, bootguard)",
+                 sizeof(project_t) <= 3840u && 4u * sizeof(project_t) <= 0x3D50u - 256u && sizeof(project_t) == 3816u);
     {   /* every 2.6 parameter's range fits its byte */
         uint32_t k, fits = 1;
         for (k = P_ITYPE; k < P_E0; k++) fits &= TP[k].min >= 0 && TP[k].max <= 255;
@@ -267,7 +267,7 @@ int main(void)
     }
     v5.t[0].micro[3] = -32, v5.t[0].micro[4] = 31, v5.t[NTRK_V - 1u].micro[9] = -7;
     v5.t[0].fill[0] = 0x09;                        /* steps 1 and 2: FILL ONLY, NO FILL */
-    v5.t[NTRK_V - 1u].fill[7] = 0x40;              /* step 32: FILL ONLY (the last one this machine keeps) */
+    v5.t[NTRK_V - 1u].fill[(NSTEP - 1u) / 4u] = (uint8_t)(FC_FILL << (2u * ((NSTEP - 1u) % 4u)));   /* the last step: FILL ONLY */
     v5.t[1].lock[0].step = 3, v5.t[1].lock[0].param = 53 + 1, v5.t[1].lock[0].val = 9;   /* format 5's P_E1 */
     v5.t[1].lock[1].step = 4, v5.t[1].lock[1].param = P_DIST, v5.t[1].lock[1].val = 100;
     v5.sum = proj_hash(&v5, sizeof v5 - 4u);

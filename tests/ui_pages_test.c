@@ -1205,10 +1205,10 @@ int main(int argc, char **argv)
         check(trk[0].p[P_MUTE], "PERFORM: key 1 cuts track 1 in one press");
         key(0);
         check(!trk[0].p[P_MUTE], "PERFORM: ... and the same key brings it back");
-        key(18);                                         /* white key 11: solo the selected track */
-        check(song.solo == 1u, "PERFORM: key 11 solos the selected track");
-        key(19);                                         /* white key 12: every solo off */
-        check(!song.solo, "PERFORM: key 12 clears every solo");
+        key(7);                                          /* white key 5: solo track 1 */
+        check(song.solo == 1u, "PERFORM: key 5 solos track 1");
+        key(7);
+        check(!song.solo, "PERFORM: ... and the same key clears it");
         key(21);                                         /* white key 13: this track back to neutral */
         check(!trk[0].p[P_TFLT] && !seq_trans[0], "PERFORM: key 13 puts the selected track back to neutral");
         check(trk[1].p[P_TFLT] == -30 && song.g[G_FILT] == 55, "PERFORM: ... and leaves the others and the master alone");

@@ -374,8 +374,10 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
             return;
         if (w < (int32_t)NTRK) {                        /* 1-6: cut a track and bring it back (lit = it plays) */
             trk[w].p[P_MUTE] = (int16_t)!trk[w].p[P_MUTE];
-        } else if (w < (int32_t)NTRK + 4) {             /* 7-10: the sections A-D, as SAVE held plays them */
-            uint32_t sec = (uint32_t)(w - (int32_t)NTRK);
+        } else if (w < (int32_t)NTRK * 2) {              /* 5-8: solo */
+            song.solo ^= (uint8_t)(1u << (w - (int32_t)NTRK));
+        } else if (w < (int32_t)NTRK * 2 + 4) {          /* 9-12: the sections A-D, as SAVE held plays them */
+            uint32_t sec = (uint32_t)(w - (int32_t)NTRK * 2);
             b[0] = (char)('A' + sec);
             if (arrangement_clock.running) {
                 ui_message("SONG PLAYS");
@@ -391,10 +393,6 @@ UI_SMALL static void layer_key(uint32_t layer, uint32_t k, uint32_t down)
                 section_load(sec);
                 ui_say("LOADED ", b);
             }
-        } else if (w == (int32_t)NTRK + 4) {            /* 11: solo the selected track */
-            song.solo ^= (uint8_t)(1u << (song.sel % NTRK));
-        } else if (w == (int32_t)NTRK + 5) {            /* 12: every solo off */
-            song.solo = 0;
         } else if (w == 12) {                           /* 13: this track back to neutral */
             char m[16];
             reset_track(song.sel % NTRK);
@@ -1035,7 +1033,7 @@ UI_SMALL static void layer_screen_draw(void)
     case LY_PERF: {                                     /* (MENTAL) cut, sections, solo, reset, fill, tap */
         uint32_t ready = arrangement_ready();
         col = C_WHITE;
-        str_cpy(sub, "cut  A-D  solo  reset  fill  tap", sizeof sub);
+        str_cpy(sub, "cut  solo  A-D  reset  fill  tap", sizeof sub);
         for (i = 0; i < 16u; i++) {
             tl[i].bg = TE_G1;
             tl[i].fg = TE_G3;
@@ -1046,8 +1044,16 @@ UI_SMALL static void layer_screen_draw(void)
                 tl[i].lab[4] = (char)('1' + i);
                 tl[i].bg = on ? TE_COL[i] : TE_G1;
                 tl[i].fg = on ? C_BLACK : TE_G3;
-            } else if (i < NTRK + 4u) {
-                uint32_t sec = i - NTRK;
+            } else if (i < NTRK * 2u) {
+                uint32_t k2 = i - NTRK;
+                int so = (song.solo >> k2) & 1u;
+                str_cpy(tl[i].lab, "solo 1", 8);
+                tl[i].lab[5] = (char)('1' + k2);
+                tl[i].bg = so ? C_WHITE : TE_G1;
+                tl[i].fg = so ? C_BLACK : TE_G3;
+                tl[i].top = TE_DIM[k2];
+            } else if (i < NTRK * 2u + 4u) {
+                uint32_t sec = i - NTRK * 2u;
                 int has = (ready >> sec) & 1u;
                 int playing = live_sec == (int8_t)sec && !arrangement_clock.running;
                 tl[i].lab[0] = (char)('A' + sec);
@@ -1055,15 +1061,6 @@ UI_SMALL static void layer_screen_draw(void)
                 tl[i].bg = has ? (playing ? TE_COL[sec] : TE_DIM[sec]) : TE_G1;
                 tl[i].fg = has ? C_BLACK : TE_G3;
                 tl[i].top = live_req == (int8_t)sec ? C_WHITE : 0;
-            } else if (i == NTRK + 4u) {
-                int so = (song.solo >> (song.sel % NTRK)) & 1u;
-                str_cpy(tl[i].lab, "solo", 8);
-                tl[i].bg = so ? C_WHITE : TE_G1;
-                tl[i].fg = so ? C_BLACK : TE_G3;
-            } else if (i == NTRK + 5u) {
-                str_cpy(tl[i].lab, "solo off", 8);
-                tl[i].bg = song.solo ? TE_G2 : TE_G1;
-                tl[i].fg = song.solo ? C_WHITE : TE_G3;
             } else if (i == 12u) {
                 str_cpy(tl[i].lab, "rst trk", 8);
             } else if (i == 13u) {
