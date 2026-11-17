@@ -233,6 +233,7 @@ UI_SMALL static void swing_str(char *b, int32_t v)            /* 0 straight .. 1
 
 /* (MENTAL) six tracks now, so a strip is 24 rows instead of 36: 40 (header) + 6 x 24 = 184, where the
  * knobs' dials start. Everything inside the strip moved up with it. */
+_Static_assert(GFX_NTRK == NTRK, "gfx.c carries one colour a track (it is included before core.h)");
 #define TRK_ROW 24
 UI_SMALL static void studio_tracks_draw(void)
 {

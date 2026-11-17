@@ -1380,7 +1380,7 @@ async function editorTheme() {
   const gfx = readFileSync(join(HERE, "../firmware/src/gfx.c"), "utf8");
   const rgb = (s) => [...s.matchAll(/RGB\((\d+), (\d+), (\d+)\)/g)].map((m) => [+m[1], +m[2], +m[3]]);
   const pals = [...gfx.matchAll(/\{"(\w+)", \{(RGB[^}]*)\}\}/g)].map((m) => [m[1], rgb(m[2])]);
-  const tdef = rgb((/TE_COL_DEF\[NTRK\] = \{([^}]*)\}/.exec(gfx) || [])[1] || "");
+  const tdef = rgb((/TE_COL_DEF\[GFX_NTRK\] = \{([^}]*)\}/.exec(gfx) || [])[1] || "");
   ok(js(pals) === js(T.BUILTIN) && js(tdef) === js(T.TRACKS), "theme: the built-in palettes and track colours == gfx.c (PALETTES, TE_COL_DEF)");
   ok(/#define THEME_MAGIC 0x324D4854u/.test(gfx) && /#define THEME_MAGIC1 0x314D4854u/.test(gfx)
     && /char name\[8\];[^]*uint16_t c\[5\];[^]*uint16_t trk\[4\];[^]*uint16_t bg;[^]*uint16_t hi;[^]*uint16_t rsv;[^]*uint32_t crc;/.test(gfx)
@@ -1487,7 +1487,7 @@ function editorTabs() {
     ok(!hex.length && /--t1: #287cff; --t2: #1ecc70; --t3: #ffc618; --t4: #ff621a; --t5: #b05cff; --t6: #00c6ce;/.test(html),
       "editor: the track colours of the device (gfx.c TE_COL_DEF), colours only as tokens" + (hex.length ? ` (${hex.join(" ")})` : ""));
     const te = readFileSync(join(HERE, "../firmware/src/gfx.c"), "utf8");   /* (2.7: TE_COL_DEF, a theme may change them) */
-    ok(/TE_COL_DEF\[NTRK\] = \{RGB\(40, 124, 255\), RGB\(30, 204, 112\), RGB\(255, 198, 24\), RGB\(255, 98, 26\), RGB\(176, 92, 255\), RGB\(0, 198, 206\)\}/.test(te),
+    ok(/TE_COL_DEF\[GFX_NTRK\] = \{RGB\(40, 124, 255\), RGB\(30, 204, 112\), RGB\(255, 198, 24\), RGB\(255, 98, 26\), RGB\(176, 92, 255\), RGB\(0, 198, 206\)\}/.test(te),
       "editor: ... the same six as the firmware's TE_COL");
     ok(/SLOOP-FONT\*\/url\(data:font\/ttf;base64,[A-Za-z0-9+\/=]{20000,}\)/.test(html), "editor: the device's Terminus font inlined (tools/gen_webfont.py)");
   }
