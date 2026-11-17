@@ -588,7 +588,9 @@ UI_SMALL static void go_home(void)
  * firmware carries: a machine straight out of the box plays all four with nothing loaded into it. (MNT
  * KICKS and MNT KIT, which read the user sample slots, are one turn of PRESETS away - they are not
  * defaults, because a default that reads an empty slot is a silent machine.) */
-static const uint8_t TRK_DEF[NPART][2] = {{0, 22}, {8, 9}, {0, 24}};   /* ANALOG MNT ACID, GRAIN MNT RITUAL, ANALOG MNT SUB */
+static const uint8_t TRK_DEF[NPART][2] = {{0, 22}, {8, 9}, {0, 24}, {8, 8}, {11, 13}};
+/*                                         MNT ACID  MNT RITUAL  MNT SUB  MNT ABYSS  MNT GRIND
+ * ANALOG, GRAIN, ANALOG, GRAIN, NOISE: the 303, the nappe, the sub, a drone and the FX track. */
 UI_SMALL static uint32_t trk_def_engine(uint32_t i) { return i < NPART ? TRK_DEF[i][0] : 0u; }
 
 UI_SMALL static int seq_is_empty(const track_t *t) { return track_empty(t); }

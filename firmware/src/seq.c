@@ -77,7 +77,8 @@ static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
 
 static uint32_t trk_midi_ch(uint32_t i)    /* MIDI channel 0..15 of track i (keys -> MIDI out); 2.6: GLO > MIDI */
 {                                          /* (2.6: OFF is OFF, in and out: 0xFF, nothing sent) */
-    int32_t c = i < NPART ? song.g[G_CH1 + i] : song.g[G_DRCH];
+    static const uint8_t CH_OF[5] = {G_CH1, G_CH2, G_CH3, G_CH4, G_CH5};   /* (MENTAL) not contiguous since 1.3 */
+    int32_t c = i < NPART ? song.g[CH_OF[i % 5u]] : song.g[G_DRCH];
     return c >= 1 && c <= 16 ? (uint32_t)c - 1u : 0xFFu;
 }
 /* a note on (vel > 0) / off to MIDI OUT on channel ch (trk_midi_ch: 0xFF, the track's MIDI OFF: nothing) */

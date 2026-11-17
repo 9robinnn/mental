@@ -79,12 +79,12 @@ _Static_assert(sizeof(theme_t) == 40u, "theme layout (the editor's Theme page wr
 static theme_t theme;                            /* the theme there is (theme_valid: project.c theme_check passed) */
 static uint8_t theme_valid, theme_on;
 /* the tracks' colours: full, two thirds, one third (the built-in ones as they always were) */
-static const uint16_t TE_COL_DEF[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
-static const uint16_t TE_MID_DEF[4] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18)};
-static const uint16_t TE_DIM_DEF[4] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8)};
-static uint16_t TE_COL[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
-static uint16_t TE_MID[4] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18)};
-static uint16_t TE_DIM[4] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8)};
+static const uint16_t TE_COL_DEF[NTRK] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26), RGB(176, 92, 255), RGB(0, 198, 206)};
+static const uint16_t TE_MID_DEF[NTRK] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18), RGB(117, 61, 170), RGB(0, 132, 137)};
+static const uint16_t TE_DIM_DEF[NTRK] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8), RGB(59, 31, 86), RGB(0, 66, 69)};
+static uint16_t TE_COL[NTRK] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26), RGB(176, 92, 255), RGB(0, 198, 206)};
+static uint16_t TE_MID[NTRK] = {RGB(26, 82, 170), RGB(20, 136, 76), RGB(170, 132, 16), RGB(170, 66, 18), RGB(117, 61, 170), RGB(0, 132, 137)};
+static uint16_t TE_DIM[NTRK] = {RGB(14, 40, 86), RGB(10, 66, 38), RGB(86, 66, 8), RGB(86, 32, 8), RGB(59, 31, 86), RGB(0, 66, 69)};
 static uint16_t rgb565_scale(uint32_t c, uint32_t num, uint32_t den)
 {
     uint32_t r = ((c >> 11) & 31u) * num / den, g = ((c >> 5) & 63u) * num / den, b = (c & 31u) * num / den;
@@ -172,10 +172,11 @@ static void palette_set(uint32_t i)              /* built-in palette i, or the t
     pal_hi = cu ? theme.hi : 0xFFFFu;
     for (k = 0; k < 4u; k++)
         te_g[k] = te_gray(TE_G_DEF[k]);
-    for (k = 0; k < 4u; k++) {
-        TE_COL[k] = cu ? theme.trk[k] : TE_COL_DEF[k];
-        TE_MID[k] = cu ? rgb565_scale(theme.trk[k], 2u, 3u) : TE_MID_DEF[k];
-        TE_DIM[k] = cu ? rgb565_scale(theme.trk[k], 1u, 3u) : TE_DIM_DEF[k];
+    for (k = 0; k < NTRK; k++) {                 /* (MENTAL) a theme carries four colours; tracks 5 and 6 keep their own */
+        int th = cu && k < 4u;
+        TE_COL[k] = th ? theme.trk[k] : TE_COL_DEF[k];
+        TE_MID[k] = th ? rgb565_scale(theme.trk[k], 2u, 3u) : TE_MID_DEF[k];
+        TE_DIM[k] = th ? rgb565_scale(theme.trk[k], 1u, 3u) : TE_DIM_DEF[k];
     }
 }
 

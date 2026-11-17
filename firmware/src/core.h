@@ -8,11 +8,11 @@
 #include <stdint.h>
 #define NVOICE 8                 /* voices per part, and the budget shared by all parts */
 #define NPOLY 8
-#define NPART 3                  /* synth parts: tracks 1..3 */
-#define NTRK 4                   /* + the drum track */
-#define TRK_DRUM 3
+#define NPART 5                  /* synth parts: tracks 1..5 */
+#define NTRK 6                   /* + the drum track (6) */
+#define TRK_DRUM (NTRK - 1)       /* the drum track is always the last one */
 enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
-#define NSTEP 64
+#define NSTEP 32
 #define HALF_FRAMES 256          /* I2S half buffer: 5.8 ms at 44.1 kHz */
 #ifndef FELUCCA_SLICE
 #define FELUCCA_SLICE 0          /* the SLICE engine (eng_slice.c): kept in the tree, not built by default */
@@ -105,6 +105,9 @@ enum {                          /* global parameters */
                                  * while SYNC is INT (seq.c clkout_block; a setting of the FM-1, kept in DR MAP's byte) */
     G_FXFADE,                   /* SLOOP 2.7.2, the FX layer (FX held), SELECT: how fast a punch-in FX fades in and out, 0 (instant, as
                                  * before) .. 15 (punch.c; a setting of the FM-1, kept in BEND's byte) */
+    G_CH4,                      /* (MENTAL) the MIDI channels of tracks 4 and 5, which the machine grew in 1.3.
+                                 * Appended so that every global before them keeps its number */
+    G_CH5,
     G_COUNT
 };
 

@@ -24,7 +24,16 @@
 #ifndef UI_SMALL                 /* (2.7) compiled for size: not the audio path (gfx.c UI_SMALL); the host tests: nothing */
 #define UI_SMALL
 #endif
-#define PROJ_MAGIC 0x46554E36u                 /* "FUN6": format 5 + the 2.6 parameters, nudge and condition in a byte */
+#define PROJ_MAGIC 0x46554E37u                 /* "FUN7": format 6 with 32-step patterns and six tracks */
+#define PROJ_MAGIC_V6 0x46554E36u              /* "FUN6": 64-step patterns, four tracks (until 1.2); read only */
+/* (MENTAL) the shape every format before 7 was stored in: 64 steps a pattern, four tracks. Frozen here so
+ * that making the patterns shorter and the machine wider does not change what an old project means. */
+#define NSTEP_V 64u
+#define NTRK_V 4u
+/* (MENTAL) an old project held four tracks, three synths and the drums; this one holds six. Its tracks
+ * 0..2 are these tracks 0..2, and its drum track is this drum track. The tracks it never had start at
+ * their defaults (proj_defaults_from). */
+#define V_TO_NEW(i) ((i) < NTRK_V - 1u ? (uint32_t)(i) : (uint32_t)TRK_DRUM)
 #define PROJ_MAGIC_V5 0x46554E35u              /* "FUN5": format 4 + per-step nudge, parameter locks, fill conditions (SLOOP 2.4) */
 #define PROJ_MAGIC_V4 0x46554E34u              /* "FUN4": four tracks, P_COUNT parameters each, 10-byte steps; read only */
 #define PROJ_MAGIC_V3 0x46554E33u              /* "FUN3": SLOOP 1.x; read only */
@@ -41,7 +50,8 @@
                                                 * so the format and its size do not change */
 _Static_assert(G_DRDLY == PROJ_NG && G_TXSRC == PROJ_NG + 5u,
                "the globals a project holds, then G_DRDLY (then 2.6's GLO > MIDI: settings of the FM-1)");
-_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_COUNT == G_FXFADE + 1u, "G_FXFADE (2.7.2) is the last global, a setting of the FM-1");
+_Static_assert(G_FXFADE == G_CLKOUT + 1u && G_CH4 == G_FXFADE + 1u && G_COUNT == G_CH5 + 1u,
+               "G_FXFADE (2.7.2), then (MENTAL) the channels of tracks 4 and 5: settings of the FM-1");
 #define PROJ_NC6 ((uint32_t)P_ITYPE)           /* format 6: the parameters kept in 16 bits, P_LEVEL .. P_VLEAD (as 5), */
 #define PROJ_NX6 ((uint32_t)(P_E0 - P_ITYPE))  /* the 2.6 ones in a byte (0..127), then P_E0 .. P_E7 */
 _Static_assert(PROJ_NC6 == PROJ_NP_V5 - 8u && PROJ_NX6 == 10u, "format 6: format 5's parameters, then ten bytes");
@@ -87,58 +97,58 @@ typedef struct {                               /* a track of format 5 (SLOOP 2.4
     int16_t p[PROJ_NP_V5];
     uint8_t engine, preset;
     union {
-        step_t step[NSTEP];
-        dstep_t dstep[NSTEP];
+        step_t step[NSTEP_V];
+        dstep_t dstep[NSTEP_V];
     };
-    int8_t micro[NSTEP];                       /* each step's nudge (core.h) */
+    int8_t micro[NSTEP_V];                       /* each step's nudge (core.h) */
     plock_t lock[NLOCK];                       /* and its parameter locks (step LOCK_FREE = none) */
-    uint8_t fill[NSTEP / 4];                   /* and its fill condition, 2 bits a step (FC_*) */
+    uint8_t fill[NSTEP_V / 4];                   /* and its fill condition, 2 bits a step (FC_*) */
 } proj_trk_v5_t;
 typedef struct {                               /* format 5, read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG];
     uint8_t sel, drdly, rsv[2];
-    proj_trk_v5_t t[NTRK];
+    proj_trk_v5_t t[NTRK_V];
     uint32_t sum;
 } project_v5_t;
 typedef struct {                               /* a track of format 4 (SLOOP 2.0 .. 2.3), read only */
     int16_t p[PROJ_NP_V4];
     uint8_t engine, preset;
     union {
-        step_t step[NSTEP];
-        dstep_t dstep[NSTEP];
+        step_t step[NSTEP_V];
+        dstep_t dstep[NSTEP_V];
     };
 } proj_trk_v4_t;
 typedef struct {                               /* format 4, read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG];
     uint8_t sel, rsv[3];
-    proj_trk_v4_t t[NTRK];
+    proj_trk_v4_t t[NTRK_V];
     uint32_t sum;
 } project_v4_t;
 typedef struct { uint8_t note[4], n, time, flags, vel; } step8_t;   /* the steps of formats 1..3 */
 typedef struct {                               /* a track of format 3, read only */
     int16_t p[PROJ_NP_V3];
     uint8_t engine, preset;
-    step8_t step[NSTEP];
+    step8_t step[NSTEP_V];
 } proj_trk_v3_t;
 typedef struct {                               /* format 3 (SLOOP 1.x), read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG_V3];
     uint8_t sel, rsv[3];
-    proj_trk_v3_t t[NTRK];
+    proj_trk_v3_t t[NTRK_V];
     uint32_t sum;
 } project_v3_t;
 typedef struct {                               /* a track of formats 1 and 2, read only */
     int16_t p[PROJ_NP_V2];
     uint8_t engine, preset;
-    step8_t step[NSTEP];
+    step8_t step[NSTEP_V];
 } proj_trk_v2_t;
 typedef struct {                               /* format 2 (until 0.9), read only */
     uint32_t magic, size;
     int16_t g[PROJ_NG_V2];
     uint8_t sel, rsv[3];
-    proj_trk_v2_t t[NTRK];
+    proj_trk_v2_t t[NTRK_V];
     uint32_t sum;
 } project_v2_t;
 typedef struct {                               /* format 1 (until 0.5 beta), read only */
@@ -149,7 +159,7 @@ typedef struct {                               /* format 1 (until 0.5 beta), rea
 } project_v1_t;
 _Static_assert(sizeof(project_v2_t) == 2552u && sizeof(project_v1_t) == 688u && sizeof(project_v3_t) == 2584u &&
                sizeof(project_v4_t) == 3112u && sizeof(project_v5_t) == 3840u, "formats 1 / 2 / 3 / 4 / 5 as they were stored");
-_Static_assert(sizeof(project_t) <= 3840u, "format 6 fits one flash object (storage.c ST_PAYLOAD_MAX)");
+_Static_assert(sizeof(project_t) <= 3840u, "format 7 fits one flash object (storage.c ST_PAYLOAD_MAX)");
 project_t proj_slot[4] __attribute__((section(".noinit")));
 
 UI_SMALL static uint32_t proj_hash(const void *p, uint32_t n)   /* FNV-1a over n bytes */
@@ -254,17 +264,18 @@ UI_SMALL static int proj_from_v4(project_t *q, const project_v4_t *v4, int n)
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
     memcpy(q->g, v4->g, sizeof q->g);
-    q->sel = v4->sel;
-    for (i = 0; i < NTRK; i++) {
+    q->sel = (uint8_t)V_TO_NEW(v4->sel < NTRK_V ? v4->sel : 0u);   /* (MENTAL) its drum track is this one */
+    for (i = 0; i < NTRK_V; i++) {
+        proj_trk_t *d = &q->t[V_TO_NEW(i)];
         uint32_t k;
-        proj_trk_plain(&q->t[i]);
+        proj_trk_plain(d);
         for (k = 0; k < PROJ_NC6; k++)                 /* by id up to P_CHORD, the parameters added since: */
-            q->t[i].p[k] = k < PROJ_NP_V4 - 8u ? v4->t[i].p[k] : TP[k].def;   /* their defaults; P_E0.. moved */
+            d->p[k] = k < PROJ_NP_V4 - 8u ? v4->t[i].p[k] : TP[k].def;   /* their defaults; P_E0.. moved */
         for (k = 0; k < 8u; k++)
-            q->t[i].e[k] = v4->t[i].p[PROJ_NP_V4 - 8u + k];
-        q->t[i].engine = v4->t[i].engine;
-        q->t[i].preset = v4->t[i].preset;
-        memcpy(q->t[i].step, v4->t[i].step, sizeof q->t[i].step);
+            d->e[k] = v4->t[i].p[PROJ_NP_V4 - 8u + k];
+        d->engine = v4->t[i].engine;
+        d->preset = v4->t[i].preset;
+        memcpy(d->step, v4->t[i].step, sizeof d->step);   /* (32 of its 64 steps: the pattern is shorter now) */
     }
     q->sum = proj_sum(q);
     return 1;
@@ -282,11 +293,11 @@ UI_SMALL static int proj_from_v5(project_t *q, const project_v5_t *v5, int n)
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
     memcpy(q->g, v5->g, sizeof q->g);
-    q->sel = v5->sel;
+    q->sel = (uint8_t)V_TO_NEW(v5->sel < NTRK_V ? v5->sel : 0u);   /* (MENTAL) its drum track is this one */
     q->drdly = v5->drdly;
-    for (i = 0; i < NTRK; i++) {
+    for (i = 0; i < NTRK_V; i++) {
         const proj_trk_v5_t *s = &v5->t[i];
-        proj_trk_t *d = &q->t[i];
+        proj_trk_t *d = &q->t[V_TO_NEW(i)];
         proj_trk_plain(d);
         for (k = 0; k < PROJ_NC6; k++)
             d->p[k] = s->p[k];
@@ -315,9 +326,9 @@ UI_SMALL static void proj_from_v3_ok(project_t *q, const project_v3_t *v3)
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
     proj_g_from_old(q->g, v3->g);
-    q->sel = v3->sel;
-    for (i = 0; i < NTRK; i++)
-        proj_trk_from_v3(&q->t[i], &v3->t[i], i == TRK_DRUM);
+    q->sel = (uint8_t)V_TO_NEW(v3->sel < NTRK_V ? v3->sel : 0u);   /* (MENTAL) its drum track is this one */
+    for (i = 0; i < NTRK_V; i++)
+        proj_trk_from_v3(&q->t[V_TO_NEW(i)], &v3->t[i], i == NTRK_V - 1u);
     q->sum = proj_sum(q);
 }
 UI_SMALL static int proj_from_v3(project_t *q, const project_v3_t *v3, int n)
@@ -341,8 +352,8 @@ UI_SMALL static int proj_from_v2(project_t *q, const project_v2_t *v2, int n)
     memset(v3, 0, sizeof *v3);
     memcpy(v3->g, v2->g, sizeof v3->g);
     v3->sel = v2->sel;
-    for (i = 0; i < NTRK; i++)
-        proj_trk_v2_to_v3(&v3->t[i], &v2->t[i], i == TRK_DRUM);
+    for (i = 0; i < NTRK_V; i++)
+        proj_trk_v2_to_v3(&v3->t[i], &v2->t[i], i == NTRK_V - 1u);
     proj_from_v3_ok(q, v3);
     return 1;
 }

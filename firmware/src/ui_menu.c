@@ -138,9 +138,9 @@ UI_SMALL static void draw_menu(void)
         if (ui.menu == 3) {                         /* (MENTAL) the live cheat sheet: 8 px a character, 30 to a line */
             static const char *const HELP[][2] = {
                 {"LFO+HOME", "THE LIVE SURFACE"},
-                {"  1-4",    "CUT A TRACK"},
-                {"  5-8",    "SOLO"},
-                {"  9-12",   "SECTIONS A-D"},
+                {"  1-6",    "CUT A TRACK"},
+                {"  7-10",   "SECTIONS A-D"},
+                {"  11/12",  "SOLO / SOLO OFF"},
                 {"  13/14",  "RESET TRACK / ALL"},
                 {"  15/16",  "FILL / TAP TEMPO"},
                 {"HOME",     "BACK TO PLAYING"},

@@ -231,6 +231,9 @@ UI_SMALL static void swing_str(char *b, int32_t v)            /* 0 straight .. 1
     fmt_int(b, clamp(v, 0, 100));
 }
 
+/* (MENTAL) six tracks now, so a strip is 24 rows instead of 36: 40 (header) + 6 x 24 = 184, where the
+ * knobs' dials start. Everything inside the strip moved up with it. */
+#define TRK_ROW 24
 UI_SMALL static void studio_tracks_draw(void)
 {
     static uint32_t head, rows[NTRK], footer;
@@ -240,7 +243,7 @@ UI_SMALL static void studio_tracks_draw(void)
     for (i = 0; i < NTRK; i++) {
         track_t *t = &trk[i];
         char b[24], e[16];
-        uint32_t selected = song.sel == i, len = (uint32_t)clamp(t->p[P_SLEN], 1, 64);
+        uint32_t selected = song.sel == i, len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
         uint32_t level = i == TRK_DRUM ? song.g[G_DRLVL] : t->p[P_LEVEL];
         uint32_t silent = trk_silent(t) || !level, pos = t->seq_idx % len, rec = (song.rec >> i) & 1u;
         uint32_t solo = (song.solo >> i) & 1u, bank = song.playing ? pos / 16u : 0u, h;
@@ -258,23 +261,23 @@ UI_SMALL static void studio_tracks_draw(void)
         for (j = 0; j < len; j++) h = h * 31u + (uint32_t)trk_step_on(t, j);
         if (!ui.force && h == rows[i]) continue;
         rows[i] = h;
-        cv_begin(240, 36, C_BLACK);
-        cv_rect(2, 3, 26, 30, selected ? col : dim);   /* the track tile */
+        cv_begin(240, TRK_ROW, C_BLACK);
+        cv_rect(2, 2, 22, TRK_ROW - 4, selected ? col : dim);   /* the track tile */
         {
             char n[2] = {(char)('1' + i), 0};
-            cv_text(11, 10, &FONT_S, n, selected ? C_BLACK : col);
+            cv_text(9, 4, &FONT_S, n, selected ? C_BLACK : col);
         }
-        cv_text(34, 1, &FONT_S, b, selected ? C_WHITE : TE_G4);
-        if (34 + text_w(&FONT_S, b) + 6 + text_w(&FONT_S, e) < 196)
-            cv_text(34 + text_w(&FONT_S, b) + 6, 1, &FONT_S, e, selected ? col : TE_G3);
+        cv_text(28, 0, &FONT_S, b, selected ? C_WHITE : TE_G4);
+        if (28 + text_w(&FONT_S, b) + 6 + text_w(&FONT_S, e) < 190)
+            cv_text(28 + text_w(&FONT_S, b) + 6, 0, &FONT_S, e, selected ? col : TE_G3);
         if (rec) {
-            cv_rect(200, 2, 36, 15, TE_RED);
-            cv_text(206, 1, &FONT_S, "rec", C_WHITE);
+            cv_rect(200, 0, 36, 13, TE_RED);
+            cv_text(206, -1, &FONT_S, "rec", C_WHITE);
         } else if (solo) {
-            cv_rect(200, 2, 36, 15, C_WHITE);
-            cv_text(202, 1, &FONT_S, "solo", C_BLACK);
+            cv_rect(200, 0, 36, 13, C_WHITE);
+            cv_text(202, -1, &FONT_S, "solo", C_BLACK);
         } else if (silent) {
-            cv_text(204, 1, &FONT_S, "mute", TE_G3);
+            cv_text(204, -1, &FONT_S, "mute", TE_G3);
         }
         for (j = 0; j < 16u; j++) {                    /* the 16 steps in view */
             uint32_t p = bank * 16u + j, on = 0;
@@ -289,17 +292,17 @@ UI_SMALL static void studio_tracks_draw(void)
                     for (k = a; k < z; k++) if (trk_step_on(t, k)) on = 2;
                 }
             }
-            cv_rect(34 + (int32_t)j * 10, 21, 8, 9,
+            cv_rect(28 + (int32_t)j * 10, 13, 8, 7,
                     !on ? C_BLACK : on == 2u ? (silent ? TE_G3 : selected ? col : dim) : TE_G1);
             if (on == 2u && !selected && !silent)
-                cv_rect(34 + (int32_t)j * 10, 21, 8, 2, col);
+                cv_rect(28 + (int32_t)j * 10, 13, 8, 2, col);
             if (song.playing && p == pos)
-                cv_rect(34 + (int32_t)j * 10, 31, 8, 2, C_WHITE);
+                cv_rect(28 + (int32_t)j * 10, 21, 8, 2, C_WHITE);
         }
-        cv_rect(198, 23, 38, 5, TE_G1);                /* the level */
+        cv_rect(192, 15, 44, 4, TE_G1);                /* the level */
         if (!silent)
-            cv_rect(198, 23, (int32_t)level * 38 / 127, 5, selected ? col : TE_G3);
-        cv_blit(0, 40 + i * 36);
+            cv_rect(192, 15, (int32_t)level * 44 / 127, 4, selected ? col : TE_G3);
+        cv_blit(0, 40 + i * TRK_ROW);
     }
     {   /* (MENTAL) the home screen is the mixer: KNOB 1 the DJ filter on the master, 2 level, 3 the track's
          * cutoff, 4 cut it / bring it back - every live move with no page to find */

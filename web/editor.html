@@ -18,7 +18,7 @@
   @font-face { font-family: "Fukiai"; src: url("fukiai.ttf") format("truetype"); font-display: block; unicode-range: U+EA00-EB09; }
   :root {
     --bg: #000; --s1: #0b0b0e; --s2: #1a1a1e; --s3: #36363c; --line: #232329; --dim: #76767e; --fg2: #c4c4cc; --fg: #f2f2f2;
-    --red: #ff2c34; --t1: #287cff; --t2: #1ecc70; --t3: #ffc618; --t4: #ff621a; --trk: var(--t1);
+    --red: #ff2c34; --t1: #287cff; --t2: #1ecc70; --t3: #ffc618; --t4: #ff621a; --t5: #b05cff; --t6: #00c6ce; --trk: var(--t1);
     --font: "SLOOP Terminus", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
     color-scheme: dark;
   }
@@ -1473,7 +1473,10 @@ const parse = {
       fillBar: !!(f & 32), songRec: !!(f & 64), recWait: !!(f2 & 1), canUndo: !!(f2 & 2), canRedo: !!(f2 & 4), freeTake: !!(f2 & 8),
       bpm: r.v(), sec: r.b() - 1, next: r.b() - 1, chainN: r.b(), chainI: r.b(), mutes: r.b(), solo: r.b(), rec: r.b(),
       sel: r.b(), fx: r.b() - 1, cpu: r.b(), songAt: r.b(), songLen: r.b(), songBar: r.b(), songBars: r.b(), ready: r.b(), tracks: [] };
-    for (let k = 0; k < 4 && r.i + 3 <= a.length; k++) o.tracks.push({ step: r.b(), len: r.b(), meter: r.b() });
+    {   /* (MENTAL) a step / length / meter a track, however many the machine has; the 2.7 tail is 18 bytes */
+      const rest = a.length - r.i, pro = rest >= 21 && (rest - 18) % 3 === 0, nt = ((rest - (pro ? 18 : 0)) / 3) | 0;
+      for (let k = 0; k < nt; k++) o.tracks.push({ step: r.b(), len: r.b(), meter: r.b() });
+    }
     if (r.i + 18 <= a.length) {                     /* (2.7, ops 6..12) the master, the THROWs, the drum sounds' TUNE / DECAY */
       const m = r.b();
       o.pro = true; o.master = m ? m - 1 : -1; o.throws = r.b();
@@ -1530,7 +1533,7 @@ const parse = {
   [CMD.MICRO_GET](a) { const r = new Reader(a), o = { track: r.b(), micro: [] }; while (r.i < a.length) o.micro.push(r.b() - 64); return o; },
   [CMD.MICRO_SET](a) { const r = new Reader(a); return { track: r.b(), step: r.b(), micro: r.b() - 64 }; },
   /* v8: a track's fill conditions (16 bytes, pack7; 3 reads as normal) and a set */
-  [CMD.FILL_GET](a) { const r = new Reader(a), o = { track: r.b() }; o.fill = Array.from(unpack7(a.slice(r.i))).slice(0, 16); while (o.fill.length < 16) o.fill.push(0); return o; },
+  [CMD.FILL_GET](a) { const r = new Reader(a), o = { track: r.b() }; o.fill = Array.from(unpack7(a.slice(r.i))); return o; },   /* (MENTAL) as many bytes as the machine sent: NSTEP / 4 */
   [CMD.FILL_SET](a) { const r = new Reader(a); return { track: r.b(), step: r.b(), cond: r.b() % 3 }; },
   /* v9 FM6 patches: target 0 a track (0..2), 1 a bank slot, 2 a factory patch; packed: the 128-byte record */
   [CMD.FM6_GET](a) { return { target: a[0], index: a[1], rc: a[2], packed: a[2] ? null : a.slice(3, 3 + 128) }; },
@@ -3135,10 +3138,10 @@ function makeMockDevice(opt = {}) {
     [[60, 60, 61, 61, 62, 0, 63, 63, 64, 65, 65, 0, 66, 66, 66, 67], [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]],
     [[60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75], [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]],
   ];
-  const P_E0 = TP.length, P_COUNT = P_E0 + 8, G_COUNT = GP.length, NSTEP = 64, G_ENGSEL = 20, P_SLCR = 45, P_CHORD = 49;
+  const P_E0 = TP.length, P_COUNT = P_E0 + 8, G_COUNT = GP.length, NSTEP = 32, G_ENGSEL = 20, P_SLCR = 45, P_CHORD = 49;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  /* four tracks (firmware v3); engine / preset / p / step below are the selected track's */
-  const NTRK = 4, TRK_DRUM = 3;
+  /* the tracks (firmware v3); engine / preset / p / step below are the selected track's */
+  const NTRK = 6, TRK_DRUM = 5;                      /* (MENTAL 1.3) five synth tracks and the drums */
   const newTrack = (i) => ({ engine: 0, preset: 0, drum: i === TRK_DRUM, fm6: FM6.INIT_PK.slice(),   /* fm6: the FM6 patch (eng_fm6.c fm6_patch) */
     p: TP.map((d) => d.def).concat(i === TRK_DRUM ? [5, 0, 0, 0, 0, 0, 0, 0] : new Array(8).fill(0)),
     step: Array.from({ length: NSTEP }, () => ({ n: 0, notes: [0, 0, 0, 0], time: 2, flags: 0, vel: 0, lvl: 0, rat: 0 })),
@@ -3147,7 +3150,7 @@ function makeMockDevice(opt = {}) {
     fill: new Array(NSTEP / 4).fill(0) });           /* v8: fill conditions, 2 bits a step */
   const NLOCK = 24;
   const st = {
-    tracks: [0, 1, 2, 3].map(newTrack), sel: 0, rec: 0, solo: 0,
+    tracks: Array.from({ length: NTRK }, (_, i) => newTrack(i)), sel: 0, rec: 0, solo: 0,
     g: GP.map((d) => d.def),
     slots: [null, null, null, null],
     smp: [0, 1, 2, 3].map(() => ({ flash: new Uint8Array(SMP.SLOT_SIZE).fill(0xFF), zones: 0, name: "", len: 0, next: SMP.DATA_OFF })),   /* USR1..4 (2.4: USR4) */
@@ -4418,7 +4421,7 @@ const THEME = {
     ["CYAN", [[0, 30, 50], [0, 62, 96], [16, 112, 160], [56, 172, 222], [140, 222, 255]]],
     ["RED", [[52, 8, 8], [100, 18, 14], [170, 36, 26], [226, 64, 48], [255, 112, 92]]],
     ["MONO", [[40, 40, 40], [80, 80, 80], [130, 130, 130], [186, 186, 186], [226, 226, 226]]]],
-  TRACKS: [[40, 124, 255], [30, 204, 112], [255, 198, 24], [255, 98, 26]],
+  TRACKS: [[40, 124, 255], [30, 204, 112], [255, 198, 24], [255, 98, 26], [176, 92, 255], [0, 198, 206]],
   to565: ([r, g, b]) => ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3),
   from565: (v) => [Math.round((((v >> 11) & 31) * 255) / 31), Math.round((((v >> 5) & 63) * 255) / 63), Math.round(((v & 31) * 255) / 31)],
   /* as the FM-1 shows it: each colour through RGB565 */

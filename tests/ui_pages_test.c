@@ -923,10 +923,10 @@ int main(int argc, char **argv)
             open_family(FAM_SEQ); frame();            /* (round to STEP again: SEQ opens there, as before) */
             go_home(); frame();
             open_family(FAM_GLO); frame();
-            (void)page_pos(&n);                       /* GLO: its nine pages */
+            (void)page_pos(&n);                       /* GLO: its pages (ten since MENTAL added MIDI 4) */
             go_home(); frame();
             ui.menu = (uint8_t)menu0, ui.menu_sel = (uint8_t)sel0, ui.force = 1; frame();
-            ok &= k1 == 1u && n1 == 2u && k2 == 2u && n2 == 2u && k3 == 3u && n3 == 3u && n == 9u;
+            ok &= k1 == 1u && n1 == 2u && k2 == 2u && n2 == 2u && k3 == 3u && n3 == 3u && n == 10u;
             if (!ok)
                 printf("ui:   counter: STEP %u/%u PATTERN %u/%u SONG %u/%u GLO /%u\n", k1, n1, k2, n2, k3, n3, n);
             check(ok, "page counter (2.7): as SELECT walks them: STEP 1/2, PATTERN 2/2 (SONG, its own screen, not counted)");
@@ -1205,10 +1205,10 @@ int main(int argc, char **argv)
         check(trk[0].p[P_MUTE], "PERFORM: key 1 cuts track 1 in one press");
         key(0);
         check(!trk[0].p[P_MUTE], "PERFORM: ... and the same key brings it back");
-        key(7);                                          /* white key 5: solo track 1 */
-        check(song.solo == 1u, "PERFORM: key 5 solos track 1");
-        key(7);
-        check(!song.solo, "PERFORM: ... and clears it");
+        key(18);                                         /* white key 11: solo the selected track */
+        check(song.solo == 1u, "PERFORM: key 11 solos the selected track");
+        key(19);                                         /* white key 12: every solo off */
+        check(!song.solo, "PERFORM: key 12 clears every solo");
         key(21);                                         /* white key 13: this track back to neutral */
         check(!trk[0].p[P_TFLT] && !seq_trans[0], "PERFORM: key 13 puts the selected track back to neutral");
         check(trk[1].p[P_TFLT] == -30 && song.g[G_FILT] == 55, "PERFORM: ... and leaves the others and the master alone");
@@ -1452,7 +1452,7 @@ int main(int argc, char **argv)
         for (j = 0; j < NPAGES; j++) if (!strcmp(PAGES[j].title, "NOTES")) break;
         open_family(FAM_SEQ); ui.page = (uint8_t)j; ui.fam_last[FAM_SEQ] = (uint8_t)j; page_entered(); ui.force = 1; frames(2);
         b0 = ui.page;
-        for (j = 0; j < 3u; j++) { encs[panel.enc[EN_ALGO]] = 1; frames(2); }
+        for (j = 0; j < (uint32_t)TRK_DRUM; j++) { encs[panel.enc[EN_ALGO]] = 1; frames(2); }
         check(song.sel == TRK_DRUM && ui.page == b0 && !page_for_drum(cur_page()) && !strcmp(PAGES[ui.page].title, "NOTES"),
               "STEP on the drum track: not a page for the drums (DRUM TRACK shown, no piano roll of the drum steps)");
         for (j = 0; j < NSTEP; j++) memset(&TDRUM->dstep[j], 0, sizeof(dstep_t));
@@ -1665,7 +1665,7 @@ int main(int argc, char **argv)
             frame();
             check(trk[1].eng_req == BANK[0].e && trk[1].preset == bank_pi[0] && !strncmp(ui.msg, "T2 PROG 0", 9),
                   "MIDI Program Change 0: track 2 takes the first sound of the PRESETS list (T2 PROG 0)");
-            pc_req[3] = 3;                                /* PC 2 on the drum channel: kit 2 */
+            pc_req[TRK_DRUM] = 3;                         /* PC 2 on the drum channel: kit 2 */
             frame();
             check(TDRUM->p[P_E0] == 2, "MIDI Program Change on the drum channel: kit 2");
             pc_req[1] = (uint8_t)(tot + 1u);              /* past the end: nothing */
@@ -1800,8 +1800,8 @@ int main(int argc, char **argv)
                 param_format(&GP[G_DRCH], 0, vv, &u);
                 check(m->id[0] == G_CH1 && m->id[1] == G_CH2 && m->id[2] == G_CH3 && m->id[3] == G_DRCH && !strcmp(m2->title, "MIDI 2") &&
                       m2->id[0] == G_ROUTE && m2->id[1] == G_CHOTH && m2->id[2] == G_MIDI && m2->id[3] == G_BEND &&
-                      !strcmp(GP[G_DRCH].label, "CH4") && !strcmp(vv, "OFF"),
-                      "GLO > MIDI: CH1 CH2 CH3 CH4 (the drums); MIDI 2: IN OTHER OUT BEND; CH4 0 reads OFF");
+                      !strcmp(GP[G_DRCH].label, "CH6") && !strcmp(vv, "OFF"),
+                      "GLO > MIDI: CH1 CH2 CH3 CH6 (the drums); MIDI 2: IN OTHER OUT BEND; CH6 0 reads OFF");
                 song.g[G_CH2] = 2, frame();
                 K(EN_K2, 1);                              /* CH2 2 -> 3: track 3's: on to 4 */
                 check(song.g[G_CH2] == 4 && !strcmp(ui.msg, "CH 3 = TRACK 3"), "GLO > MIDI: CH2 turned onto track 3's channel: on to 4, \"CH 3 = TRACK 3\"");
@@ -1941,9 +1941,9 @@ int main(int argc, char **argv)
         song.playing = 0; transport_req = 0; song.rec = 0; rec_wait = 0; arrangement_enabled = 0; live_req = -1;
         live(0, 0, 0, 0);
         bpm = (int)(lv_out[3] | lv_out[4] << 7) - 8192;
-        ok &= lv_n == 50u && lv_out[0] == 0 && !(lv_out[1] & 1u) && bpm == song.g[G_BPM] && lv_out[12] == song.sel && lv_out[32] == 0u
-              && lv_out[34] == (8u | 4u << 4);
-        check(ok, "LIVE (2.7): the state, 50 bytes (flags, BPM, sections, mix, punch, song, 4 x step / length / meter, master, throws, drum tune / decay)");
+        ok &= lv_n == 20u + 3u * NTRK + 2u + DRUM_LANES && lv_out[0] == 0 && !(lv_out[1] & 1u) && bpm == song.g[G_BPM] &&
+              lv_out[12] == song.sel && lv_out[20 + 3 * NTRK] == 0u && lv_out[22 + 3 * NTRK] == (8u | 4u << 4);
+        check(ok, "LIVE (2.7): the state (flags, BPM, sections, mix, punch, song, a step / length / meter a track, master, throws, drum tune / decay)");
         live(1, 1, 0, 0); ok = transport_req == 1u; frames(30);
         live(0, 0, 0, 0); ok &= song.playing && (lv_out[1] & 1u) && lv_out[20] < trk_len(&trk[0]) && lv_out[21] == trk_len(&trk[0]);
         check(ok, "LIVE: PLAY plays; the reply says so");
@@ -1980,11 +1980,11 @@ int main(int argc, char **argv)
         check(ok, "LIVE: a free take shows; REC closes it, as the REC button (not only PLAY)");
         {   /* (2.7) the page's own: THROW, master, a drum sound's TUNE / DECAY, the pattern, ERASE, ROLL, a chain */
             uint32_t i, len0, any = 0, r, on = 0;
-            live(10, 3, 0, 0); ok = thr_ed == 3u && lv_out[33] == 3u;
+            live(10, 3, 0, 0); ok = thr_ed == 3u && lv_out[21 + 3 * NTRK] == 3u;
             live(10, 0, 0, 0); ok &= thr_ed == 0u;
-            live(11, 63, 0, 0); ok &= ed_master == 64u && lv_out[32] == 64u && ed_master_k == 0xFFFFu;
+            live(11, 63, 0, 0); ok &= ed_master == 64u && lv_out[20 + 3 * NTRK] == 64u && ed_master_k == 0xFFFFu;
             live(11, 127, 0, 0); ok &= ed_master == 0u;
-            live(12, 2, 11, 2); ok &= drum_tune[2] == 3 && drum_dec[2] == -2 && lv_out[36] == (11u | 2u << 4);
+            live(12, 2, 11, 2); ok &= drum_tune[2] == 3 && drum_dec[2] == -2 && lv_out[24 + 3 * NTRK] == (11u | 2u << 4);
             live(12, 2, 8, 4); ok &= !drum_tune[2] && !drum_dec[2];
             check(ok, "LIVE: THROW (as FX + OCT), the master level (the knob takes it back), a drum sound's TUNE / DECAY");
             len0 = trk_len(&trk[0]);

@@ -179,7 +179,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_ENGGO] = PE("SET", N_GO, 0),
     [G_CLRSEQ] = PE("CLRSQ", N_GO, 0),
     [G_INITSND] = PE("INIT", N_GO, 0),
-    [G_DRCH] = PE("CH4", N_MCH, 10),                  /* GM drum part (track 4) MIDI channel, 0 = OFF (2.6: as GLO > MIDI's CH1..3) */
+    [G_DRCH] = PE("CH6", N_MCH, 10),                  /* the drum track's MIDI channel, 0 = OFF (MENTAL: it is track 6 now) */
     [G_DRLVL] = PD("LVL", F_INT, 0, 127, 100),
     [G_DRREV] = PD("REV", F_INT, 0, 127, 16),
     [G_DUST] = PD("DUST", F_PCT, 0, 127, 0),
@@ -188,6 +188,8 @@ static const param_desc_t GP[G_COUNT] = {
     [G_ROLL] = PE("ROLL", N_ROLL, 1),
     [G_NEWPRJ] = PE("NEW", N_GO, 0),
     [G_DRDLY] = PD("DLY", F_INT, 0, 127, 0),
+    [G_CH4] = PE("CH4", N_MCH, 4),                /* (MENTAL) tracks 4 and 5 */
+    [G_CH5] = PE("CH5", N_MCH, 5),
     [G_CH1] = PE("CH1", N_MCH, 1),                /* 2.6, GLO > MIDI: synth track 1's channel, in and out (OFF: */
     [G_CH2] = PE("CH2", N_MCH, 2),                /* no MIDI in; out on its old one) */
     [G_CH3] = PE("CH3", N_MCH, 3),
@@ -425,6 +427,7 @@ static const page_t PAGES[] = {
                                                                            * setting in these two pages (IN and OUT on
                                                                            * SYSTEM too, the drums' channel on DRUMS) */
     {"MIDI 3", FAM_GLO, SC_GLOBAL, GR_NONE, {G_FXCH, G_DRMAP, G_RMCH, G_CLKOUT}},   /* 2.7: the punch-in FX over MIDI */
+    {"MIDI 4", FAM_GLO, SC_GLOBAL, GR_NONE, {G_CH4, G_CH5, 0xFF, 0xFF}},   /* (MENTAL) tracks 4 and 5 */
     {"TEXTURE", FAM_GLO, SC_GLOBAL, GR_NONE, {G_TXSRC, G_TXLVL, G_TXTONE, G_TXMOVE}},   /* 2.6: the bed under the mix */
     {"TEXTURE 2", FAM_GLO, SC_GLOBAL, GR_NONE, {G_TXRATE, G_TXWHEN, G_TXDUCK, 0xFF}},
     {"PRESETS", FAM_SAVE, SC_GLOBAL, GR_BROWSE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* browser: PRESETS knob / KNOB 1 */
